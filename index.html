@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#1a0730" />
+<title>紫色糖果推幣機：推塔大抽獎</title>
+<style>
+/* ============================================================
+   UI 樣式 —— 紫色糖果樂園
+   ============================================================ */
+:root{
+  --purple-deep:#1a0730;
+  --purple:#8b5cf6;
+  --purple-light:#c4a3ff;
+  --pink:#f472b6;
+  --candy:#ffd54a;
+  --glass:rgba(58,18,99,.72);
+  --glass-brd:rgba(196,163,255,.35);
+  --font:"Segoe UI","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{
+  width:100%;height:100%;overflow:hidden;background:var(--purple-deep);
+  font-family:var(--font);color:#fff;user-select:none;
+  touch-action:none;overscroll-behavior:none;
+}
+canvas#stage{display:block;position:absolute;inset:0;width:100%;height:100%}
+#stage-wrap{position:absolute;inset:0;z-index:1}
+
+/* ---------- 頂部 HUD ---------- */
+#hud{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:14px 18px;gap:12px;pointer-events:none;
+}
+.hud-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{
+  display:flex;align-items:center;gap:9px;
+  background:var(--glass);border:1px solid var(--glass-brd);
+  border-radius:999px;padding:7px 14px;backdrop-filter:blur(10px);
+  box-shadow:0 6px 22px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+  font-size:13px;letter-spacing:.03em;white-space:nowrap;
+}
+.pill .lbl{color:var(--purple-light);font-weight:600;font-size:12px}
+.pill .val{font-weight:800;font-size:17px;font-variant-numeric:tabular-nums;color:#fff}
+.pill .val.small{font-size:12px;opacity:.85}
+.pill.emphasis{background:rgba(139,92,246,.35);border-color:rgba(196,163,255,.6)}
+
+.dots{display:flex;gap:4px}
+.dots i{
+  width:11px;height:11px;border-radius:50%;
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);
+  transition:background .18s, box-shadow .18s, transform .18s;
+}
+.dots i.on{
+  background:linear-gradient(180deg,#ffe58a,#ffb020);
+  border-color:#ffe58a;box-shadow:0 0 10px rgba(255,200,70,.9);
+  transform:scale(1.08);
+}
+.dots.jp i{width:9px;height:9px;border-radius:3px}
+.dots.jp i.on{
+  background:linear-gradient(180deg,#ff9ce0,#ff4fa3);
+  border-color:#ffc4e8;box-shadow:0 0 12px rgba(255,90,180,.95);
+}
+@keyframes pulseGold{
+  0%,100%{box-shadow:0 6px 22px rgba(0,0,0,.35),0 0 0 rgba(255,213,74,0)}
+  50%{box-shadow:0 6px 22px rgba(0,0,0,.35),0 0 24px rgba(255,213,74,.9)}
+}
+.pill.flash{animation:pulseGold .45s ease}
+
+/* 兌換按鈕（分數 → 遊戲幣） */
+button.pill.ex{
+  cursor:pointer;font-family:var(--font);color:#fff;border:none;
+  pointer-events:auto;               /* #hud 是 pointer-events:none，這裡必須打開 */
+  transition:transform .08s, background .2s, opacity .2s;
+}
+button.pill.ex:disabled{opacity:.40;cursor:not-allowed;filter:grayscale(.5)}
+button.pill.ex:not(:disabled){
+  background:linear-gradient(180deg,rgba(255,229,138,.98),rgba(245,158,11,.98));
+  border:1px solid #ffe58a;color:#3b1263;
+  animation:exPulse 1.5s ease-in-out infinite;
+}
+button.pill.ex:not(:disabled) .lbl{color:#7c2d12;font-weight:800}
+button.pill.ex:not(:disabled) .val{color:#3b1263;font-weight:900;font-size:13px}
+button.pill.ex:active{transform:translateY(2px) scale(.98)}
+@keyframes exPulse{
+  0%,100%{box-shadow:0 6px 22px rgba(0,0,0,.35),0 0 0 0 rgba(255,213,74,.55)}
+  50%{box-shadow:0 6px 22px rgba(0,0,0,.35),0 0 0 9px rgba(255,213,74,0)}
+}
+
+/* ---------- 底部操作列 ---------- */
+#controls{
+  position:absolute;left:0;right:0;bottom:0;z-index:10;
+  display:flex;justify-content:center;align-items:flex-end;flex-wrap:wrap;
+  padding:0 22px 22px;gap:20px;pointer-events:none;
+}
+#controls > *{pointer-events:auto}
+.center-col{display:flex;flex-direction:column;align-items:center;gap:9px}
+
+.btn{
+  position:relative;border:none;cursor:pointer;font-family:var(--font);
+  color:#fff;font-weight:800;letter-spacing:.06em;
+  border-radius:18px;padding:16px 26px;font-size:15px;
+  background:linear-gradient(180deg,#a855f7,#6d28d9);
+  box-shadow:0 8px 0 #4c1d95, 0 12px 26px rgba(124,58,237,.55), inset 0 1px 0 rgba(255,255,255,.35);
+  transition:transform .06s, box-shadow .06s, filter .15s;
+  overflow:hidden;
+}
+.btn:active{transform:translateY(5px);box-shadow:0 3px 0 #4c1d95,0 6px 14px rgba(124,58,237,.5), inset 0 1px 0 rgba(255,255,255,.35)}
+.btn:disabled{filter:grayscale(.65) brightness(.7);cursor:not-allowed}
+.btn .k{
+  display:inline-block;margin-right:8px;font-size:11px;
+  background:rgba(0,0,0,.28);border-radius:6px;padding:2px 7px;vertical-align:middle;
+}
+.btn.insert.main{
+  min-width:216px;padding:18px 34px 14px;font-size:20px;letter-spacing:.12em;
+  border-radius:22px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:linear-gradient(180deg,#ffe58a,#f59e0b);color:#3b1263;
+  box-shadow:0 9px 0 #b45309,0 16px 34px rgba(245,158,11,.55),inset 0 1px 0 rgba(255,255,255,.75);
+}
+.btn.insert.main:active{
+  box-shadow:0 3px 0 #b45309,0 8px 16px rgba(245,158,11,.5),inset 0 1px 0 rgba(255,255,255,.75);
+}
+.btn.insert.main .k{background:rgba(59,18,99,.18);color:#3b1263;margin-right:0}
+.btn.insert.main .sub{font-size:10px;font-weight:700;letter-spacing:.04em;opacity:.68}
+
+/* 搖機 */
+.btn.shake{
+  width:104px;height:104px;border-radius:50%;padding:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:linear-gradient(180deg,#fde68a,#f59e0b);
+  color:#3b1263;box-shadow:0 8px 0 #b45309,0 14px 30px rgba(245,158,11,.5), inset 0 1px 0 rgba(255,255,255,.6);
+  overflow:visible;
+}
+.btn.shake:active{box-shadow:0 3px 0 #b45309,0 8px 16px rgba(245,158,11,.45), inset 0 1px 0 rgba(255,255,255,.6)}
+.btn.shake .txt{font-size:17px;font-weight:900}
+.btn.shake .cnt{font-size:11px;font-weight:700;opacity:.75}
+.btn.shake .ring{
+  position:absolute;inset:-7px;border-radius:50%;
+  background:conic-gradient(rgba(255,255,255,.9) var(--p,0%), rgba(0,0,0,.30) 0);
+  -webkit-mask:radial-gradient(circle, transparent 0 52px, #000 53px);
+          mask:radial-gradient(circle, transparent 0 52px, #000 53px);
+  pointer-events:none;transition:opacity .2s;opacity:0;
+}
+.btn.shake.cooling .ring{opacity:1}
+.btn.shake.cooling{filter:saturate(.55) brightness(.85)}
+
+.btn.boost{
+  font-size:12px;padding:8px 18px;border-radius:12px;
+  background:linear-gradient(180deg,#67e8f9,#0891b2);color:#062a33;
+  box-shadow:0 5px 0 #155e75,0 8px 18px rgba(8,145,178,.45), inset 0 1px 0 rgba(255,255,255,.5);
+  min-width:132px;
+}
+.btn.boost:active{box-shadow:0 2px 0 #155e75,0 5px 12px rgba(8,145,178,.4), inset 0 1px 0 rgba(255,255,255,.5)}
+
+/* 右下工具 */
+#tools{position:absolute;right:18px;bottom:18px;z-index:11;display:flex;gap:8px}
+.tool{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--glass-brd);
+  background:var(--glass);color:var(--purple-light);font-size:15px;cursor:pointer;
+  backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;
+  transition:color .15s,border-color .15s;
+}
+.tool:hover{color:#fff;border-color:var(--purple-light)}
+
+/* ---------- 抽獎轉盤 ---------- */
+#wheelPanel{
+  position:absolute;right:20px;bottom:74px;z-index:12;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  opacity:0;transform:translateY(14px) scale(.94);pointer-events:none;
+  transition:opacity .25s, transform .25s;cursor:pointer;
+}
+#wheelPanel.show{opacity:1;transform:none;pointer-events:auto}
+.wheel-wrap{position:relative;width:150px;height:150px}
+.wheel-pointer{
+  position:absolute;left:50%;top:-7px;transform:translateX(-50%);
+  width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;
+  border-top:17px solid #ffd54a;z-index:3;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));
+}
+.wheel{
+  position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(
+    from 0deg,
+    #60a5fa 0deg 90deg,
+    #f472b6 90deg 180deg,
+    #fbbf24 180deg 270deg,
+    #a855f7 270deg 360deg
+  );
+  box-shadow:0 0 0 6px rgba(26,7,48,.92), 0 0 0 8px rgba(196,163,255,.55), 0 0 30px rgba(168,85,247,.75);
+  transition:transform 1.8s cubic-bezier(.16,.72,.16,1);
+  will-change:transform;
+}
+.wheel .sector-txt{
+  position:absolute;font-size:11px;font-weight:900;
+  color:rgba(20,6,40,.85);white-space:nowrap;transform:translate(-50%,-50%);
+}
+.wheel-hub{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:42px;height:42px;border-radius:50%;z-index:2;
+  background:radial-gradient(circle at 34% 30%,#fff,#c4a3ff 45%,#7c3aed);
+  box-shadow:0 3px 12px rgba(0,0,0,.6), inset 0 -2px 6px rgba(0,0,0,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:900;color:#2a0a4a;letter-spacing:.05em;
+}
+.wheel-result{
+  font-size:13px;font-weight:900;letter-spacing:.04em;
+  background:var(--glass);border:1px solid var(--glass-brd);
+  border-radius:999px;padding:6px 16px;backdrop-filter:blur(8px);
+  min-width:120px;text-align:center;color:#fff;
+  text-shadow:0 0 14px rgba(255,213,74,.8);
+}
+#queueBadge{
+  position:absolute;top:-10px;right:-4px;z-index:4;
+  background:#ef4444;color:#fff;font-size:11px;font-weight:900;
+  border-radius:999px;padding:2px 8px;box-shadow:0 3px 10px rgba(239,68,68,.7);
+  opacity:0;transition:opacity .2s;
+}
+#queueBadge.show{opacity:1}
+
+/* ---------- 大 JP ---------- */
+#jpOverlay{
+  position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;
+  background:radial-gradient(circle at 50% 45%, rgba(255,213,74,.22), rgba(26,7,48,.94) 62%);
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+#jpOverlay.show{opacity:1}
+#jpOverlay .rays{
+  position:absolute;inset:-50%;
+  background:repeating-conic-gradient(from 0deg,rgba(255,213,74,.16) 0deg 7deg,transparent 7deg 14deg);
+  animation:spin 9s linear infinite;pointer-events:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.jp-title{
+  font-size:clamp(26px,5vw,58px);font-weight:900;letter-spacing:.14em;
+  background:linear-gradient(180deg,#fff8d0,#ffd54a 40%,#f59e0b 70%,#fff3b0);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,200,60,.95));
+  animation:jpIn .6s cubic-bezier(.2,1.6,.4,1) both;
+}
+.jp-num{
+  font-size:clamp(42px,10vw,110px);font-weight:900;font-variant-numeric:tabular-nums;
+  color:#fff;text-shadow:0 0 20px #fff,0 0 50px #ffd54a,0 0 100px #f59e0b;
+  animation:jpIn .7s .1s cubic-bezier(.2,1.6,.4,1) both;
+}
+.jp-sub{font-size:13px;letter-spacing:.4em;color:var(--purple-light);animation:jpIn .7s .2s both}
+@keyframes jpIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ---------- 橫式提示 ---------- */
+#rotateHint{
+  position:absolute;inset:0;z-index:60;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  background:linear-gradient(160deg,#2a0a4a,#12041f);text-align:center;padding:24px;
+}
+#rotateHint .ico{
+  width:62px;height:106px;border-radius:12px;border:3px solid var(--purple-light);
+  animation:rotatePhone 2s ease-in-out infinite;
+}
+@keyframes rotatePhone{0%,40%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+#rotateHint p{color:var(--purple-light);font-size:15px;letter-spacing:.1em}
+@media (orientation:portrait) and (max-width:900px){
+  #rotateHint{display:flex}
+}
+
+/* ---------- 載入 ---------- */
+#loader{
+  position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;
+  background:radial-gradient(circle at 50% 40%,#3b1263,#12041f 75%);
+  transition:opacity .5s;
+}
+#loader.hide{opacity:0;pointer-events:none}
+#loader .title{
+  font-size:22px;font-weight:900;letter-spacing:.14em;
+  background:linear-gradient(180deg,#fff,#c4a3ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+#loader .bar{width:210px;height:6px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
+#loader .bar i{display:block;height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,#a855f7,#f472b6,#ffd54a);transition:width .25s}
+#loader .tip{font-size:12px;color:rgba(196,163,255,.75);letter-spacing:.08em}
+
+/* ---------- 除錯 ---------- */
+#debug{
+  position:absolute;top:74px;right:18px;z-index:20;display:none;
+  background:rgba(8,2,16,.86);border:1px solid rgba(124,58,237,.5);
+  border-radius:10px;padding:10px 13px;font-family:ui-monospace,Consolas,monospace;
+  font-size:11px;line-height:1.65;color:#a7f3d0;white-space:pre;pointer-events:none;
+}
+#debug.show{display:block}
+
+/* ---------- Toast ---------- */
+#toast{
+  position:absolute;left:50%;top:88px;transform:translate(-50%,-8px);z-index:25;
+  background:rgba(26,7,48,.94);border:1px solid var(--glass-brd);
+  border-radius:12px;padding:9px 20px;font-size:13px;font-weight:700;
+  letter-spacing:.05em;opacity:0;transition:opacity .25s,transform .25s;
+  pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5);white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* 飛幣 */
+.flycoin{
+  position:absolute;z-index:14;width:15px;height:15px;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,#ffe58a,#ffb020 60%,#c47d00);
+  box-shadow:0 0 12px rgba(255,200,70,.95);pointer-events:none;
+}
+.flycoin.gold{background:radial-gradient(circle at 32% 28%,#fff8d0,#ffd54a 55%,#f59e0b)}
+</style>
+</head>
+<body>
+
+<div id="stage-wrap"><canvas id="stage"></canvas></div>
+
+<div id="hud">
+  <div class="hud-group">
+    <div class="pill" id="pillScore">
+      <span class="lbl">分數</span>
+      <span class="val" id="scoreTxt">0</span>
+    </div>
+    <button class="pill ex" id="btnExchange" disabled>
+      <span class="lbl">兌換</span>
+      <span class="val small" id="exTxt">0 幣</span>
+    </button>
+    <div class="pill emphasis" id="pillWallet">
+      <span class="lbl">遊戲幣</span>
+      <span class="val" id="walletTxt">100</span>
+    </div>
+  </div>
+  <div class="hud-group">
+    <div class="pill">
+      <span class="lbl">波波</span>
+      <span class="val small" id="ballTxt">0 / 3</span>
+    </div>
+    <div class="pill" id="pillJp">
+      <span class="lbl">JP</span>
+      <span class="dots jp" id="jpDots"><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="val small" id="jpTxt">0/5</span>
+    </div>
+  </div>
+</div>
+
+<div id="wheelPanel">
+  <div id="queueBadge">×2</div>
+  <div class="wheel-wrap">
+    <div class="wheel-pointer"></div>
+    <div class="wheel" id="wheel"></div>
+    <div class="wheel-hub">JP</div>
+  </div>
+  <div class="wheel-result" id="wheelResult">—</div>
+</div>
+
+<div id="controls">
+  <button class="btn shake" id="btnShake">
+    <span class="ring"></span>
+    <span class="txt">搖機</span>
+    <span class="cnt" id="shakeCnt">×10</span>
+  </button>
+  <button class="btn insert main" id="btnInsert">
+    <span class="k">SPACE</span>投　幣
+    <span class="sub">在滑軌當前位置落下</span>
+  </button>
+  <button class="btn boost" id="btnBoost">推進器 ⚡</button>
+</div>
+
+<div id="tools">
+  <button class="tool" id="btnSound" title="音效">🔊</button>
+  <button class="tool" id="btnDebug" title="除錯 (D)">◧</button>
+  <button class="tool" id="btnReset" title="重新開始">⟳</button>
+</div>
+
+<div id="jpOverlay">
+  <div class="rays"></div>
+  <div class="jp-sub">CANDY JACKPOT</div>
+  <div class="jp-title">大 JACKPOT</div>
+  <div class="jp-num" id="jpNum">0</div>
+  <div class="jp-sub">紫 色 糖 果 大 獎</div>
+</div>
+
+<div id="debug"></div>
+<div id="toast"></div>
+
+<div id="rotateHint">
+  <div class="ico"></div>
+  <p>請將手機橫放以獲得最佳體驗</p>
+</div>
+
+<div id="loader">
+  <div class="title">紫色糖果推幣機</div>
+  <div class="bar"><i id="loaderBar"></i></div>
+  <div class="tip">正在鋪幣…</div>
+</div>
+
+<!-- three r160 起已無 UMD build，必須走 importmap + ESM -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
+
+/* ============================================================
+   §1  CONFIG —— 所有可調參數的唯一來源
+   ============================================================ */
+const D2R = Math.PI / 180;
+
+const CONFIG = {
+  /* ---- 世界尺度：重力 40 u/s² ÷ 9.81 ≈ 4.08 → 1 單位 ≈ 24.5 cm ---- */
+  /* 這代表台面約 2.0 m 寬、幣徑約 14.7 cm，是一台大型街機推幣機的尺寸 */
+  BED_W: 8.0,
+  BED_D: 5.0,
+  BED_TILT_DEG: 2.5,
+  APRON_DEPTH: 0.8,
+  APRON_DEG: 35,
+  BACK_WALL_Z: 1.1,
+
+  /* ---- 硬幣（銀色金屬圓幣） ---- */
+  COIN_RADIUS: 0.30,
+  COIN_THICKNESS: 0.08,
+  COIN_SEGMENTS: 14,
+  COIN_MASS: 0.08,             // 原 0.025 → 金屬重量感
+  COIN_ANGLE_JITTER_DEG: 0.3,
+  COIN_SPIN_JITTER: 0.3,
+
+  /* ---- 波波 ---- */
+  BALL_RADIUS: 0.32,
+  BALL_MASS: 0.12,
+  BALL_MAX: 3,
+  BALL_RESPAWN_DELAY: 8.0,
+  BALL_EVERY_N_COINS: 40,
+  BALL_INITIAL_FREE: 2,
+
+  /* ---- 物理 ----
+     重力從 9.82 → 40：這是「浮」的唯一主因。
+     原本等於把重力設成地球的 1/4，所有東西都變慢動作。
+     硬幣摩擦 0.45~0.55、彈性 0.10~0.12（維持規格硬約束的區間下緣） */
+  GRAVITY: -40.0,
+  FIXED_STEP: 1 / 60,
+  MAX_SUB_STEPS: 3,
+  SOLVER_ITERATIONS: 12,
+  SOLVER_TOLERANCE: 0.001,
+  SLEEP_SPEED_LIMIT: 0.5,
+  SLEEP_TIME_LIMIT: 0.45,
+
+  /* ---- 投幣滑軌：左右規律巡迴，按一下就在當前位置落幣 ---- */
+  CARRIAGE_Y: 1.78,            // 出幣口高度
+  CARRIAGE_Z: 3.30,            // 出幣口前後位置
+  CARRIAGE_RANGE: 3.05,        // 左右擺幅（±）
+  CARRIAGE_PERIOD: 2.8,        // 一個完整來回（秒）
+  CARRIAGE_RELEASE_VY: -1.2,   // 落幣初速（向下）
+  CARRIAGE_COOLDOWN: 0.10,     // 兩枚幣最小間隔
+
+  PUSHER_W: 7.6,
+  PUSHER_H: 1.2,
+  PUSHER_D: 1.4,
+  PUSHER_Z_MIN: 1.80,
+  PUSHER_STROKE: 1.0,
+  PUSHER_CYCLE: 2.8,
+  PUSHER_FWD_TIME: 0.95,
+  PUSHER_FWD_DWELL: 0.15,
+  PUSHER_BACK_TIME: 1.45,
+  PUSHER_BACK_DWELL: 0.25,
+  PUSHER_MAX_SPEED_FWD: 2.4,
+  PUSHER_MAX_SPEED_BACK: 1.7,
+
+  SHAKE_COOLDOWN: 3.0,
+  SHAKE_USES_PER_GAME: 10,
+  SHAKE_IMPULSE_MIN: 6.0,
+  SHAKE_IMPULSE_MAX: 12.0,
+  BOOST_ENABLED: true,
+  BOOST_COOLDOWN: 5.0,
+
+  /* ---- 經濟：分數與遊戲幣完全分開，手動兌換 ---- */
+  START_WALLET: 100,
+  POINTS_PER_COIN: 1,
+  POINTS_PER_GAMECOIN: 5,      // 兌換率：5 分 → 1 遊戲幣
+  REFILL_INTERVAL: 3.0,
+  WALLET_CAP: 9999,
+
+  W_10: 45, W_50: 30, W_100: 15, W_JP: 10,
+  SMALL_JP_TO_BIG_JP: 5,
+  BIG_JP_VALUE: 1000,
+  DRAW_ANIM_MS: 1800,
+  GOLD_SPILL_RATE: 15,
+
+  MAX_BODIES_DESKTOP: 300,
+  MAX_BODIES_MOBILE: 180,
+  PRELOAD_DESKTOP: 130,
+  PRELOAD_MOBILE: 95,
+  AUTO_FEED_BELOW: 85,       // 台面幣數低於此值 → 幣塔自動補幣
+  AUTO_FEED_INTERVAL: 0.45,
+  GOLD_MAX: 64,
+  PIXEL_RATIO_CAP: 1.5,
+};
+
+const IS_MOBILE = matchMedia('(pointer: coarse)').matches || innerWidth < 900;
+const MAX_BODIES = IS_MOBILE ? CONFIG.MAX_BODIES_MOBILE : CONFIG.MAX_BODIES_DESKTOP;
+const PRELOAD = IS_MOBILE ? CONFIG.PRELOAD_MOBILE : CONFIG.PRELOAD_DESKTOP;
+
+/* ============================================================
+   §2  工具
+   ============================================================ */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rng = mulberry32(20240521);
+const rand = (a, b) => a + (b - a) * rng();
+const randInt = (a, b) => Math.floor(rand(a, b + 1));
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const $ = (id) => document.getElementById(id);
+
+const _v3 = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const _m4 = new THREE.Matrix4();
+const _s1 = new THREE.Vector3(1, 1, 1);
+const _col = new THREE.Color();
+const _ent = new THREE.Object3D();
+
+/* 台面表面高度（前低 2.5° 斜坡；台面中心 z = BED_D/2 處的表面高度為 0） */
+const BED_SLOPE = Math.tan(CONFIG.BED_TILT_DEG * D2R);
+const bedY = (z) => (CONFIG.BED_D / 2 - z) * BED_SLOPE;
+const BED_FRONT_Z = CONFIG.BED_D;
+const BED_FRONT_Y = bedY(BED_FRONT_Z);
+
+/* ============================================================
+   §3  音效（WebAudio 程序化合成，零外部檔案）
+   ============================================================ */
+class Sfx {
+  constructor() { this.ctx = null; this.on = true; this.noiseBuf = null; }
+
+  ensure() {
+    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    const sr = this.ctx.sampleRate;
+    this.noiseBuf = this.ctx.createBuffer(1, sr, sr);
+    const d = this.noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  get t() { return this.ctx ? this.ctx.currentTime : 0; }
+
+  env(g, t0, a, d, peak) {
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + a + d);
+  }
+
+  clink(vol = 0.5) {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    const src = this.ctx.createBufferSource(); src.buffer = this.noiseBuf;
+    src.playbackRate.value = rand(1.4, 2.2);
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = rand(2400, 4200); bp.Q.value = 6;
+    const g = this.ctx.createGain();
+    this.env(g, now, 0.004, 0.07, clamp(vol, 0.02, 0.30));
+    src.connect(bp); bp.connect(g); g.connect(this.ctx.destination);
+    src.start(now); src.stop(now + 0.1);
+  }
+
+  drop() {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    const o = this.ctx.createOscillator(); o.type = 'triangle';
+    o.frequency.setValueAtTime(880, now);
+    o.frequency.exponentialRampToValueAtTime(560, now + 0.05);
+    const g = this.ctx.createGain(); this.env(g, now, 0.003, 0.055, 0.09);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(now); o.stop(now + 0.09);
+  }
+
+  score() {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    const o = this.ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(440, now);
+    o.frequency.exponentialRampToValueAtTime(1250, now + 0.12);
+    const g = this.ctx.createGain(); this.env(g, now, 0.004, 0.11, 0.09);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(now); o.stop(now + 0.18);
+  }
+
+  ballIn() {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    [523.25, 659.25, 783.99].forEach((f, i) => {
+      const o = this.ctx.createOscillator(); o.type = 'triangle';
+      const st = now + i * 0.055;
+      o.frequency.setValueAtTime(f, st);
+      const g = this.ctx.createGain(); this.env(g, st, 0.004, 0.18, 0.13);
+      o.connect(g); g.connect(this.ctx.destination);
+      o.start(st); o.stop(st + 0.3);
+    });
+  }
+
+  tick(pitch = 1) {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    const o = this.ctx.createOscillator(); o.type = 'square';
+    o.frequency.value = 900 * pitch;
+    const g = this.ctx.createGain(); this.env(g, now, 0.002, 0.028, 0.045);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(now); o.stop(now + 0.05);
+  }
+
+  win(level = 1) {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    const scale = level >= 3 ? [523, 659, 784, 1046, 1318]
+      : level === 2 ? [523, 659, 784, 1046] : [523, 659, 784];
+    scale.forEach((f, i) => {
+      const o = this.ctx.createOscillator(); o.type = 'triangle';
+      const st = now + i * 0.075;
+      o.frequency.setValueAtTime(f, st);
+      const g = this.ctx.createGain(); this.env(g, st, 0.005, 0.40, 0.15);
+      o.connect(g); g.connect(this.ctx.destination);
+      o.start(st); o.stop(st + 0.55);
+    });
+  }
+
+  jackpot() {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    for (let i = 0; i < 10; i++) {
+      const o = this.ctx.createOscillator(); o.type = 'sawtooth';
+      const st = now + i * 0.12;
+      o.frequency.setValueAtTime(300 + i * 90, st);
+      o.frequency.exponentialRampToValueAtTime(1200 + i * 120, st + 0.1);
+      const g = this.ctx.createGain(); this.env(g, st, 0.005, 0.15, 0.08);
+      o.connect(g); g.connect(this.ctx.destination);
+      o.start(st); o.stop(st + 0.3);
+    }
+  }
+
+  shake() {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    const src = this.ctx.createBufferSource(); src.buffer = this.noiseBuf;
+    src.playbackRate.value = 0.6;
+    const lp = this.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320;
+    const g = this.ctx.createGain(); this.env(g, now, 0.006, 0.15, 0.20);
+    src.connect(lp); lp.connect(g); g.connect(this.ctx.destination);
+    src.start(now); src.stop(now + 0.3);
+  }
+
+  click() {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    const o = this.ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(1400, now);
+    o.frequency.exponentialRampToValueAtTime(700, now + 0.05);
+    const g = this.ctx.createGain(); this.env(g, now, 0.002, 0.05, 0.06);
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(now); o.stop(now + 0.08);
+  }
+}
+const sfx = new Sfx();
+
+/* ============================================================
+   §4  渲染器 / 場景 / 相機 / 燈光
+   ============================================================ */
+const canvas = $('stage');
+const renderer = new THREE.WebGLRenderer({
+  canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance'
+});
+renderer.setPixelRatio(Math.min(devicePixelRatio, CONFIG.PIXEL_RATIO_CAP));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = !IS_MOBILE;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.35;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a0730);
+scene.fog = new THREE.Fog(0x1a0730, 24, 52);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 260);
+const CAM_TARGET = new THREE.Vector3(0, 0.5, 2.9);
+const CAM_BASE = new THREE.Vector3(0, 6.8, 10.4);
+let camOrbit = 0, camOrbitTarget = 0, camShake = 0;
+
+scene.add(new THREE.HemisphereLight(0xb794f6, 0x2a0a4a, 1.35));
+
+const key = new THREE.DirectionalLight(0xfff2ff, 2.1);
+key.position.set(-7, 14, 10);
+key.castShadow = !IS_MOBILE;
+if (!IS_MOBILE) {
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.left = -11;
+  key.shadow.camera.right = 11;
+  key.shadow.camera.top = 11;
+  key.shadow.camera.bottom = -11;
+  key.shadow.camera.near = 1;
+  key.shadow.camera.far = 42;
+  key.shadow.bias = -0.0012;
+  key.shadow.normalBias = 0.02;
+}
+scene.add(key);
+
+const rim = new THREE.DirectionalLight(0xa855f7, 1.1);
+rim.position.set(8, 6, -8);
+scene.add(rim);
+
+const towerLightA = new THREE.PointLight(0xf472b6, 22, 16, 2);
+towerLightA.position.set(0, 5.4, -1.6);
+scene.add(towerLightA);
+
+const towerLightB = new THREE.PointLight(0x7dd3fc, 14, 14, 2);
+towerLightB.position.set(0, 2.2, 1.6);
+scene.add(towerLightB);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.15));
+
+/* ---- 環境反射 ----
+   金屬材質（metalness ≈ 1）沒有環境貼圖會反射不到任何東西 → 變成一片死黑。
+   這裡用 Canvas 生一張等距長方圖（上亮下暗 + 四顆柔光燈箱），
+   再過 PMREM 轉成粗糙度正確的環境貼圖。銀幣的金屬光澤全靠它。 */
+(function buildEnvironment() {
+  try {
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = 512;
+    const x = c.getContext('2d');
+
+    const g = x.createLinearGradient(0, 0, 0, 512);
+    g.addColorStop(0.00, '#fff6ff');
+    g.addColorStop(0.20, '#c9a7ff');
+    g.addColorStop(0.44, '#6d28d9');
+    g.addColorStop(0.64, '#2a0a4a');
+    g.addColorStop(1.00, '#08010f');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 1024, 512);
+
+    const blobs = [
+      [170, 90, 150, 'rgba(255,255,255,.95)'],
+      [610, 55, 200, 'rgba(255,244,255,.92)'],
+      [880, 155, 120, 'rgba(196,163,255,.85)'],
+      [370, 205, 140, 'rgba(255,213,74,.55)'],
+    ];
+    for (let i = 0; i < blobs.length; i++) {
+      const bx = blobs[i][0], by = blobs[i][1], br = blobs[i][2], col = blobs[i][3];
+      const rg = x.createRadialGradient(bx, by, 0, bx, by, br);
+      rg.addColorStop(0, col);
+      rg.addColorStop(1, 'rgba(0,0,0,0)');
+      x.fillStyle = rg;
+      x.fillRect(bx - br, by - br, br * 2, br * 2);
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    scene.environment = pmrem.fromEquirectangular(tex).texture;
+    tex.dispose();
+    pmrem.dispose();
+  } catch (err) {
+    /* 環境貼圖失敗不應讓遊戲死掉，只是金屬會比較平 */
+    console.warn('environment map failed', err);
+  }
+})();
+
+/* ============================================================
+   §5  程序化貼圖
+   ============================================================ */
+function stripeTexture(colA, colB, bands) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const x = c.getContext('2d');
+  const w = 256 / bands;
+  for (let i = 0; i < bands; i++) {
+    x.fillStyle = i % 2 ? colA : colB;
+    x.fillRect(i * w, 0, w + 1, 256);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+function glowTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.35, 'rgba(196,163,255,.55)');
+  g.addColorStop(1, 'rgba(139,92,246,0)');
+  x.fillStyle = g;
+  x.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function floorTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#2e1150';
+  x.fillRect(0, 0, 256, 256);
+  x.strokeStyle = 'rgba(168,85,247,.30)';
+  x.lineWidth = 2;
+  for (let i = 0; i <= 256; i += 32) {
+    x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 256); x.stroke();
+    x.beginPath(); x.moveTo(0, i); x.lineTo(256, i); x.stroke();
+  }
+  const g = x.createRadialGradient(128, 128, 10, 128, 128, 180);
+  g.addColorStop(0, 'rgba(168,85,247,.28)');
+  g.addColorStop(1, 'rgba(46,17,80,0)');
+  x.fillStyle = g;
+  x.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(2, 2);
+  return t;
+}
+
+const TEX_GLOW = glowTexture();
+const TEX_FLOOR = floorTexture();
+
+/* 背景：天空球 + 光暈 + 漂浮糖果 */
+let backdrop = null;
+(function buildBackdrop() {
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(80, 24, 16),
+    new THREE.MeshBasicMaterial({ color: 0x24083f, side: THREE.BackSide, fog: false })
+  );
+  scene.add(sky);
+
+  const bg = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({
+      map: TEX_GLOW, transparent: true, opacity: 0.20,
+      blending: THREE.AdditiveBlending, depthWrite: false, fog: false
+    })
+  );
+  bg.scale.set(46, 34, 1);
+  bg.position.set(0, 6, -28);
+  scene.add(bg);
+
+  const N = IS_MOBILE ? 90 : 200;
+  const inst = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(0.22, 0),
+    new THREE.MeshStandardMaterial({ roughness: 0.4, metalness: 0.05 }),
+    N
+  );
+  inst.frustumCulled = false;
+  const palette = [0xc084fc, 0xf472b6, 0xfde68a, 0x7dd3fc, 0xa7f3d0];
+  const data = [];
+  for (let i = 0; i < N; i++) {
+    const a = rand(0, Math.PI * 2), r = rand(14, 32);
+    data.push({
+      x: Math.cos(a) * r, y: rand(2, 20), z: Math.sin(a) * r - 8,
+      s: rand(0.4, 1.5), sp: rand(0.15, 0.5), ph: rand(0, 6.28), rot: rand(0.2, 1.4)
+    });
+    _col.setHex(palette[i % palette.length]);
+    inst.setColorAt(i, _col);
+  }
+  scene.add(inst);
+  backdrop = { inst, data };
+})();
+
+/* ============================================================
+   §6  物理世界
+   ============================================================ */
+const world = new CANNON.World();
+world.gravity.set(0, CONFIG.GRAVITY, 0);
+world.broadphase = new CANNON.SAPBroadphase(world);
+world.broadphase.axisIndex = 2;
+world.allowSleep = true;
+world.solver.iterations = CONFIG.SOLVER_ITERATIONS;
+world.solver.tolerance = CONFIG.SOLVER_TOLERANCE;
+world.defaultContactMaterial.friction = 0.5;
+world.defaultContactMaterial.restitution = 0.1;
+world.defaultContactMaterial.contactEquationStiffness = 1e7;
+world.defaultContactMaterial.contactEquationRelaxation = 4;
+
+const MAT = {
+  coin: new CANNON.Material('coin'),
+  bed: new CANNON.Material('bed'),
+  pusher: new CANNON.Material('pusher'),
+  ball: new CANNON.Material('ball'),
+};
+
+/* 硬幣側摩擦 0.45~0.60、彈性 0.10~0.15（規格硬約束）
+   重力提高 4 倍後，低彈性 + 高摩擦讓金屬幣「落下就停住」，這才是重量感 */
+[
+  [MAT.coin, MAT.bed, 0.55, 0.10],
+  [MAT.coin, MAT.coin, 0.50, 0.10],
+  [MAT.coin, MAT.pusher, 0.60, 0.10],
+  [MAT.coin, MAT.ball, 0.45, 0.15],
+  [MAT.ball, MAT.bed, 0.35, 0.14],
+  [MAT.ball, MAT.pusher, 0.35, 0.14],
+].forEach(([a, b, f, r]) => {
+  world.addContactMaterial(new CANNON.ContactMaterial(a, b, { friction: f, restitution: r }));
+});
+
+const PUSHER_FACE_MIN = CONFIG.PUSHER_Z_MIN + CONFIG.PUSHER_D / 2;
+const PUSHER_FACE_MAX = PUSHER_FACE_MIN + CONFIG.PUSHER_STROKE;
+const APRON_END_Z = BED_FRONT_Z + CONFIG.APRON_DEPTH;
+
+/* ============================================================
+   §7  靜態場景 + 碰撞體
+   ============================================================ */
+const stage = new THREE.Group();
+scene.add(stage);
+
+function addStatic(mesh, shapes, pos, quat) {
+  if (mesh) stage.add(mesh);
+  const body = new CANNON.Body({ mass: 0, material: MAT.bed });
+  shapes.forEach((s) => body.addShape(s));
+  body.position.copy(pos);
+  if (quat) body.quaternion.copy(quat);
+  world.addBody(body);
+  return body;
+}
+
+/* --- 台面 --- */
+{
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(CONFIG.BED_W, 0.4, CONFIG.BED_D),
+    new THREE.MeshStandardMaterial({ map: TEX_FLOOR, roughness: 0.62, metalness: 0.12, color: 0xbfa6ff })
+  );
+  mesh.position.set(0, -0.2, CONFIG.BED_D / 2);
+  mesh.rotation.x = CONFIG.BED_TILT_DEG * D2R;
+  mesh.receiveShadow = true;
+
+  const q = new CANNON.Quaternion();
+  q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), CONFIG.BED_TILT_DEG * D2R);
+  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(CONFIG.BED_W / 2, 0.2, CONFIG.BED_D / 2))],
+    new CANNON.Vec3(0, -0.2, CONFIG.BED_D / 2), q);
+}
+
+/* --- 前緣結算坡 35° --- */
+{
+  const ang = CONFIG.APRON_DEG * D2R;
+  const slopeLen = CONFIG.APRON_DEPTH / Math.cos(ang);
+  const topMidY = BED_FRONT_Y - Math.sin(ang) * slopeLen / 2;
+  const topMidZ = BED_FRONT_Z + CONFIG.APRON_DEPTH / 2;
+  const nY = Math.cos(ang), nZ = Math.sin(ang);
+  const cx = 0, cy = topMidY - nY * 0.1, cz = topMidZ - nZ * 0.1;
+
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(CONFIG.BED_W, 0.2, slopeLen),
+    new THREE.MeshStandardMaterial({ color: 0x551a8b, roughness: 0.3, metalness: 0.5 })
+  );
+  mesh.position.set(cx, cy, cz);
+  mesh.rotation.x = ang;
+
+  const q = new CANNON.Quaternion();
+  q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), ang);
+  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(CONFIG.BED_W / 2, 0.1, slopeLen / 2))],
+    new CANNON.Vec3(cx, cy, cz), q);
+}
+
+/* --- 後牆 --- */
+{
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(CONFIG.BED_W, 1.4, 0.3),
+    new THREE.MeshStandardMaterial({ color: 0x5b21b6, roughness: 0.45, metalness: 0.25 })
+  );
+  mesh.position.set(0, 0.35, CONFIG.BACK_WALL_Z - 0.15);
+  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(CONFIG.BED_W / 2, 0.7, 0.15))],
+    new CANNON.Vec3(0, 0.35, CONFIG.BACK_WALL_Z - 0.15), null);
+}
+
+/* --- 左右低圍欄（0.45 高，配合 Q8-B「任何邊緣都算分」） --- */
+for (const s of [-1, 1]) {
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.24, 0.75, CONFIG.BED_D + 0.4),
+    new THREE.MeshStandardMaterial({
+      map: stripeTexture('#f472b6', '#fde68a', 20), roughness: 0.35, metalness: 0.15
+    })
+  );
+  mesh.position.set(s * (CONFIG.BED_W / 2), 0.075, CONFIG.BED_D / 2);
+  mesh.rotation.x = CONFIG.BED_TILT_DEG * D2R;
+  mesh.receiveShadow = true;
+
+  const q = new CANNON.Quaternion();
+  q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), CONFIG.BED_TILT_DEG * D2R);
+  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(0.12, 0.375, (CONFIG.BED_D + 0.4) / 2))],
+    new CANNON.Vec3(s * (CONFIG.BED_W / 2), 0.075, CONFIG.BED_D / 2), q);
+}
+
+/* --- 塔基平台 --- */
+{
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(6.4, 1.0, 5.2),
+    new THREE.MeshStandardMaterial({ color: 0x3b1263, roughness: 0.8, metalness: 0.1 })
+  );
+  mesh.position.set(0, -0.5, -2.6);
+  stage.add(mesh);
+}
+
+/* --- 中央糖果幣塔 --- */
+let towerGlowSprite = null;
+{
+  const towerGroup = new THREE.Group();
+  towerGroup.position.set(0, 0, -1.6);
+  scene.add(towerGroup);
+
+  const stripe = stripeTexture('#c084fc', '#ffffff', 12);
+  stripe.repeat.set(3, 2);
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.1, 1.1, 5.6, 24),
+    new THREE.MeshStandardMaterial({ map: stripe, roughness: 0.32, metalness: 0.22 })
+  );
+  shaft.position.y = 2.8;
+  shaft.castShadow = !IS_MOBILE;
+  towerGroup.add(shaft);
+
+  const capMat = new THREE.MeshStandardMaterial({
+    color: 0xf472b6, roughness: 0.2, metalness: 0.35,
+    emissive: 0x831843, emissiveIntensity: 0.4
+  });
+  const cap = new THREE.Mesh(
+    new THREE.SphereGeometry(1.16, 22, 14, 0, Math.PI * 2, 0, Math.PI / 2), capMat
+  );
+  cap.position.y = 5.6;
+  cap.castShadow = !IS_MOBILE;
+  towerGroup.add(cap);
+
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(1.22, 0.09, 8, 32), capMat);
+  collar.position.y = 0.1;
+  collar.rotation.x = Math.PI / 2;
+  towerGroup.add(collar);
+
+  towerGlowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX_GLOW, color: 0xffd54a, transparent: true, opacity: 0.75,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  }));
+  towerGlowSprite.scale.set(5, 5, 1);
+  towerGlowSprite.position.y = 5.9;
+  towerGroup.add(towerGlowSprite);
+
+  /* 底部光環 */
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(4.6, 5.2, 48),
+    new THREE.MeshBasicMaterial({
+      color: 0x8b5cf6, transparent: true, opacity: 0.22,
+      side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false
+    })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(0, -1.0, 2.6);
+  scene.add(ring);
+}
+
+/* ============================================================
+   §8  投幣滑軌 —— 左右規律巡迴的單一投幣口
+   玩家按一下，就在滑軌「當前位置」落幣 → 落點是時機問題，不是選擇問題
+   ============================================================ */
+const CARRIAGE = { x: 0, t: 0, cooldown: 0, group: null, beam: null, ring: null };
+
+(function buildCarriage() {
+  const railY = 2.64;
+  const z = CONFIG.CARRIAGE_Z;
+
+  /* 水平軌道 */
+  const rail = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.075, 0.075, CONFIG.CARRIAGE_RANGE * 2 + 0.8, 10),
+    new THREE.MeshStandardMaterial({ color: 0xd8c8ff, roughness: 0.22, metalness: 0.9 })
+  );
+  rail.rotation.z = Math.PI / 2;
+  rail.position.set(0, railY, z);
+  scene.add(rail);
+
+  for (const s of [-1, 1]) {
+    const cap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 12, 10),
+      new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.3, metalness: 0.6 })
+    );
+    cap.position.set(s * (CONFIG.CARRIAGE_RANGE + 0.4), railY, z);
+    scene.add(cap);
+  }
+
+  const g = new THREE.Group();
+  g.position.set(0, 0, z);
+  scene.add(g);
+
+  /* 吊臂 */
+  const stem = new THREE.Mesh(
+    new THREE.BoxGeometry(0.16, 0.46, 0.16),
+    new THREE.MeshStandardMaterial({ color: 0xb794f6, roughness: 0.28, metalness: 0.85 })
+  );
+  stem.position.set(0, railY - 0.26, 0);
+  g.add(stem);
+
+  /* 糖果漏斗（出幣口） */
+  const funnel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.56, 0.24, 0.55, 18, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0xf472b6, roughness: 0.18, metalness: 0.8, side: THREE.DoubleSide,
+      emissive: 0x5b0f2e, emissiveIntensity: 0.5
+    })
+  );
+  funnel.position.set(0, CONFIG.CARRIAGE_Y + 0.30, 0);
+  g.add(funnel);
+
+  const gl = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX_GLOW, color: 0xffb3e6, transparent: true, opacity: 0.6,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  }));
+  gl.scale.set(1.5, 1.5, 1);
+  gl.position.set(0, CONFIG.CARRIAGE_Y + 0.06, 0);
+  g.add(gl);
+
+  /* 落點光柱 */
+  const beamH = CONFIG.CARRIAGE_Y - bedY(z);
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.26, beamH, 12, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: 0xffd54a, transparent: true, opacity: 0.14,
+      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+    })
+  );
+  beam.position.set(0, CONFIG.CARRIAGE_Y - beamH / 2, 0);
+  g.add(beam);
+
+  /* 地面落點標記 */
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.20, 0.34, 26),
+    new THREE.MeshBasicMaterial({
+      color: 0xffd54a, transparent: true, opacity: 0.7,
+      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+    })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(0, bedY(z) + 0.02, 0);
+  g.add(ring);
+
+  CARRIAGE.group = g;
+  CARRIAGE.beam = beam;
+  CARRIAGE.ring = ring;
+})();
+
+function updateCarriage(dt) {
+  CARRIAGE.t += dt;
+  CARRIAGE.x = Math.sin((CARRIAGE.t / CONFIG.CARRIAGE_PERIOD) * Math.PI * 2)
+    * CONFIG.CARRIAGE_RANGE;
+  CARRIAGE.group.position.x = CARRIAGE.x;
+  CARRIAGE.cooldown = Math.max(0, CARRIAGE.cooldown - dt);
+
+  const pulse = 0.5 + 0.5 * Math.sin(CARRIAGE.t * 6);
+  CARRIAGE.ring.material.opacity = 0.42 + pulse * 0.38;
+  CARRIAGE.beam.material.opacity = 0.09 + pulse * 0.07;
+}
+
+/* --- 空中提示：波波掉落口 --- */
+{
+  const hoop = new THREE.Mesh(
+    new THREE.TorusGeometry(0.6, 0.06, 8, 24),
+    new THREE.MeshStandardMaterial({
+      color: 0xffd54a, emissive: 0xffa000, emissiveIntensity: 0.9,
+      roughness: 0.2, metalness: 0.6
+    })
+  );
+  hoop.position.set(0, 3.9, 3.0);
+  hoop.rotation.x = Math.PI / 2;
+  scene.add(hoop);
+}
+
+/* ============================================================
+   §9  實例池
+   ============================================================ */
+class InstancePool {
+  constructor(geometry, material, max, name) {
+    this.max = max;
+    this.name = name;
+    this.list = [];
+    this.mesh = new THREE.InstancedMesh(geometry, material, max);
+    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.mesh.count = 0;
+    this.mesh.frustumCulled = false;
+    this.mesh.castShadow = (!IS_MOBILE && name === 'coin');
+    this.mesh.receiveShadow = false;
+    scene.add(this.mesh);
+    this._m = new THREE.Matrix4();
+  }
+
+  push(entity, color) {
+    if (this.list.length >= this.max) return false;
+    const i = this.list.length;
+    this.list.push(entity);
+    entity.slot = i;
+    if (color) this.mesh.setColorAt(i, color);
+    this.mesh.count = this.list.length;
+    if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+    return true;
+  }
+
+  remove(entity) {
+    const i = entity.slot;
+    if (i < 0) return;
+    const last = this.list.length - 1;
+    if (i !== last) {
+      const tail = this.list[last];
+      this.list[i] = tail;
+      tail.slot = i;
+      this.mesh.getMatrixAt(last, this._m);
+      this.mesh.setMatrixAt(i, this._m);
+      const ca = this.mesh.instanceColor;
+      if (ca) {
+        const a = ca.array;
+        a[i * 3] = a[last * 3];
+        a[i * 3 + 1] = a[last * 3 + 1];
+        a[i * 3 + 2] = a[last * 3 + 2];
+        ca.needsUpdate = true;
+      }
+    }
+    this.list.pop();
+    this.mesh.count = this.list.length;
+    entity.slot = -1;
+  }
+
+  sync() {
+    const arr = this.list;
+    const mesh = this.mesh;
+    for (let i = 0; i < arr.length; i++) {
+      const b = arr[i].body;
+      _v3.set(b.position.x, b.position.y, b.position.z);
+      _q.set(b.quaternion.x, b.quaternion.y, b.quaternion.z, b.quaternion.w);
+      _m4.compose(_v3, _q, _s1);
+      mesh.setMatrixAt(i, _m4);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+}
+
+const COIN_GEO = new THREE.CylinderGeometry(
+  CONFIG.COIN_RADIUS, CONFIG.COIN_RADIUS, CONFIG.COIN_THICKNESS, 20
+);
+const BALL_GEO = new THREE.SphereGeometry(CONFIG.BALL_RADIUS, 16, 12);
+
+/* ---- 幣面浮雕貼圖（同心圈 + 星形 + 邊齒），讓幣看起來是「真的硬幣」 ---- */
+function coinFaceTexture(tintLight, tintMid, tintDark) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const x = c.getContext('2d');
+  const cx = 128, cy = 128;
+
+  x.fillStyle = tintDark;
+  x.fillRect(0, 0, 256, 256);
+
+  const g0 = x.createRadialGradient(cx - 26, cy - 30, 12, cx, cy, 128);
+  g0.addColorStop(0, tintLight);
+  g0.addColorStop(0.55, tintMid);
+  g0.addColorStop(0.9, tintDark);
+  g0.addColorStop(1, '#4a505c');
+  x.beginPath();
+  x.arc(cx, cy, 128, 0, Math.PI * 2);
+  x.fillStyle = g0;
+  x.fill();
+
+  /* 同心浮雕圈 */
+  for (let i = 0; i < 5; i++) {
+    const r = 116 - i * 8.5;
+    x.beginPath();
+    x.arc(cx, cy, r, 0, Math.PI * 2);
+    x.strokeStyle = i % 2 ? 'rgba(255,255,255,.55)' : 'rgba(70,78,92,.5)';
+    x.lineWidth = i % 2 ? 2.6 : 1.6;
+    x.stroke();
+  }
+
+  /* 中央星形浮雕 */
+  x.save();
+  x.translate(cx, cy);
+  x.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const rr = i % 2 ? 27 : 60;
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
+    if (i) x.lineTo(px, py); else x.moveTo(px, py);
+  }
+  x.closePath();
+  const gs = x.createRadialGradient(-12, -16, 4, 0, 0, 64);
+  gs.addColorStop(0, '#ffffff');
+  gs.addColorStop(1, tintMid);
+  x.fillStyle = gs;
+  x.fill();
+  x.strokeStyle = 'rgba(60,68,82,.75)';
+  x.lineWidth = 2.4;
+  x.stroke();
+  x.restore();
+
+  /* 外圈邊齒 */
+  for (let i = 0; i < 64; i++) {
+    const a = (Math.PI * 2 / 64) * i;
+    x.beginPath();
+    x.moveTo(cx + Math.cos(a) * 118, cy + Math.sin(a) * 118);
+    x.lineTo(cx + Math.cos(a) * 128, cy + Math.sin(a) * 128);
+    x.strokeStyle = 'rgba(255,255,255,.30)';
+    x.lineWidth = 2;
+    x.stroke();
+  }
+
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+const SILVER_TEX = coinFaceTexture('#f4f7fb', '#c3cad6', '#98a1b0');
+const GOLD_TEX = coinFaceTexture('#fff2b8', '#e0a92e', '#a97a14');
+
+const coinPool = new InstancePool(
+  COIN_GEO,
+  new THREE.MeshStandardMaterial({
+    map: SILVER_TEX,
+    color: 0xffffff,
+    metalness: 0.92,
+    roughness: 0.26,
+  }),
+  MAX_BODIES, 'coin'
+);
+const goldPool = new InstancePool(
+  COIN_GEO,
+  new THREE.MeshStandardMaterial({
+    map: GOLD_TEX,
+    color: 0xffffff,
+    metalness: 0.95,
+    roughness: 0.17,
+    emissive: 0x6b3d00,
+    emissiveIntensity: 0.35,
+  }),
+  CONFIG.GOLD_MAX, 'gold'
+);
+const ballPool = new InstancePool(
+  BALL_GEO,
+  new THREE.MeshStandardMaterial({
+    color: 0xff9ce0, roughness: 0.16, metalness: 0.35,
+    emissive: 0xff4fa3, emissiveIntensity: 0.5
+  }),
+  CONFIG.BALL_MAX + 2, 'ball'
+);
+
+/* 銀幣的細微色階（讓每一枚在強光下仍可分辨，但整體是銀色） */
+const SILVER_SHADES = [0xffffff, 0xf2f5fa, 0xe6ebf3, 0xfbfdff, 0xdde3ec, 0xf7f9fd]
+  .map((h) => new THREE.Color(h));
+
+/* ============================================================
+   §10  物理形狀（Cylinder 軸向保險）
+   ============================================================ */
+const CYL_AXIS_FIX = (() => {
+  const probe = new CANNON.Cylinder(0.3, 0.3, 0.08, 8);
+  let maxY = 0, maxZ = 0;
+  for (const v of probe.vertices) {
+    maxY = Math.max(maxY, Math.abs(v.y));
+    maxZ = Math.max(maxZ, Math.abs(v.z));
+  }
+  if (maxY <= maxZ) return null;
+  const q = new CANNON.Quaternion();
+  q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+  return q;
+})();
+
+const COIN_SHAPE = new CANNON.Cylinder(
+  CONFIG.COIN_RADIUS, CONFIG.COIN_RADIUS, CONFIG.COIN_THICKNESS, CONFIG.COIN_SEGMENTS
+);
+const BALL_SHAPE = new CANNON.Sphere(CONFIG.BALL_RADIUS);
+
+/* ============================================================
+   §11  實體系統
+   ============================================================ */
+const entities = [];
+const freelist = { coin: [], gold: [], ball: [] };
+const pools = { coin: coinPool, gold: goldPool, ball: ballPool };
+let activeCount = 0;
+let recyclingCount = 0;
+
+function createEntity(kind) {
+  const isBall = kind === 'ball';
+  const body = new CANNON.Body({
+    mass: isBall ? CONFIG.BALL_MASS : CONFIG.COIN_MASS,
+    material: isBall ? MAT.ball : MAT.coin,
+    linearDamping: isBall ? 0.10 : 0.02,
+    angularDamping: isBall ? 0.10 : 0.05,
+    allowSleep: true,
+  });
+  body.sleepSpeedLimit = CONFIG.SLEEP_SPEED_LIMIT;
+  body.sleepTimeLimit = CONFIG.SLEEP_TIME_LIMIT;
+  if (isBall) {
+    body.addShape(BALL_SHAPE);
+  } else if (CYL_AXIS_FIX) {
+    body.addShape(COIN_SHAPE, new CANNON.Vec3(0, 0, 0), CYL_AXIS_FIX);
+    body.updateMassProperties();
+  } else {
+    body.addShape(COIN_SHAPE);
+  }
+  const ent = { kind, body, slot: -1, scored: false, alive: false };
+  body.__ent = ent;
+  return ent;
+}
+
+function acquire(kind) {
+  const e = freelist[kind].pop() || createEntity(kind);
+  e.scored = false;
+  e.alive = true;
+  return e;
+}
+
+function release(e) {
+  if (!e.alive) return;
+  e.alive = false;
+  if (e.body.world === world) world.removeBody(e.body);
+  pools[e.kind].remove(e);
+  const i = entities.indexOf(e);
+  if (i >= 0) entities.splice(i, 1);
+  activeCount--;
+  recyclingCount++;
+  freelist[e.kind].push(e);
+}
+
+function spawnCoin(kind, x, y, z, vx, vy, vz, yaw) {
+  const pool = pools[kind];
+  if (pool.list.length >= pool.max) return null;
+
+  const e = acquire(kind);
+  const b = e.body;
+  b.position.set(x, y, z);
+  b.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), yaw);
+  b.velocity.set(vx, vy, vz);
+  b.angularVelocity.set(
+    rand(-1, 1) * CONFIG.COIN_SPIN_JITTER,
+    rand(-1, 1) * CONFIG.COIN_SPIN_JITTER,
+    rand(-1, 1) * CONFIG.COIN_SPIN_JITTER
+  );
+  b.force.set(0, 0, 0);
+  b.torque.set(0, 0, 0);
+  b.wakeUp();
+  b.sleepState = CANNON.Body.AWAKE;
+  world.addBody(b);
+
+  if (kind === 'gold') _col.setRGB(1, 1, 1);
+  else _col.copy(SILVER_SHADES[randInt(0, 5)]);
+  pool.push(e, _col);
+
+  entities.push(e);
+  activeCount++;
+  return e;
+}
+
+function spawnBall(x, y, z) {
+  if (ballPool.list.length >= CONFIG.BALL_MAX) return null;
+  const e = acquire('ball');
+  const b = e.body;
+  b.position.set(x, y, z);
+  b.quaternion.set(0, 0, 0, 1);
+  b.velocity.set(rand(-0.3, 0.3), -0.5, rand(-0.3, 0.3));
+  b.angularVelocity.set(rand(-1, 1), rand(-1, 1), rand(-1, 1));
+  b.force.set(0, 0, 0);
+  b.torque.set(0, 0, 0);
+  b.wakeUp();
+  b.sleepState = CANNON.Body.AWAKE;
+  world.addBody(b);
+
+  ballPool.push(e, null);
+  entities.push(e);
+  activeCount++;
+  return e;
+}
+
+/* --- 上限回收 --- */
+function enforceBodyCap() {
+  if (activeCount < MAX_BODIES) return;
+  let victim = null;
+  let best = Infinity;
+  for (const e of entities) {
+    if (e.kind === 'ball' || e.kind === 'gold' || e.scored) continue;
+    if (e.body.sleepState !== CANNON.Body.SLEEPING) continue;
+    if (e.body.position.z < best) { best = e.body.position.z; victim = e; }
+  }
+  if (!victim) {
+    best = Infinity;
+    for (const e of entities) {
+      if (e.kind !== 'coin' || e.scored) continue;
+      if (e.body.position.z < best) { best = e.body.position.z; victim = e; }
+    }
+  }
+  if (victim) release(victim);
+}
+
+/* ============================================================
+   §12  推板
+   ============================================================ */
+const pusher = (() => {
+  const stripe = stripeTexture('#f472b6', '#fde68a', 20);
+  stripe.repeat.set(10, 1);
+
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(CONFIG.PUSHER_W, CONFIG.PUSHER_H, CONFIG.PUSHER_D),
+    new THREE.MeshStandardMaterial({
+      map: stripe, roughness: 0.28, metalness: 0.42,
+      emissive: 0x3b1263, emissiveIntensity: 0.5
+    })
+  );
+  mesh.castShadow = !IS_MOBILE;
+  scene.add(mesh);
+
+  const body = new CANNON.Body({ mass: 0, material: MAT.pusher });
+  body.type = CANNON.Body.KINEMATIC;
+  body.addShape(new CANNON.Box(new CANNON.Vec3(
+    CONFIG.PUSHER_W / 2, CONFIG.PUSHER_H / 2, CONFIG.PUSHER_D / 2
+  )));
+  body.position.set(0, -0.05 + CONFIG.PUSHER_H / 2, CONFIG.PUSHER_Z_MIN);
+  body.allowSleep = false;
+  body.collisionResponse = true;
+  world.addBody(body);
+
+  mesh.position.copy(body.position);
+
+  return { mesh, body, t: CONFIG.PUSHER_CYCLE * 0.55, fast: false };
+})();
+
+function easeInOut(x) {
+  x = clamp(x, 0, 1);
+  return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+}
+
+function pusherTarget(t) {
+  const fwdEnd = CONFIG.PUSHER_FWD_TIME;
+  const dwellEnd = fwdEnd + CONFIG.PUSHER_FWD_DWELL;
+  const backEnd = dwellEnd + CONFIG.PUSHER_BACK_TIME;
+  const z0 = CONFIG.PUSHER_Z_MIN;
+  const z1 = CONFIG.PUSHER_Z_MIN + CONFIG.PUSHER_STROKE;
+  if (t < fwdEnd) return { z: lerp(z0, z1, easeInOut(t / fwdEnd)), dir: 1 };
+  if (t < dwellEnd) return { z: z1, dir: 1 };
+  if (t < backEnd) return { z: lerp(z1, z0, easeInOut((t - dwellEnd) / CONFIG.PUSHER_BACK_TIME)), dir: -1 };
+  return { z: z0, dir: -1 };
+}
+
+function updatePusher(dt) {
+  pusher.t = (pusher.t + dt) % CONFIG.PUSHER_CYCLE;
+  const { z: target, dir } = pusherTarget(pusher.t);
+  const maxSpeed = (dir > 0 ? CONFIG.PUSHER_MAX_SPEED_FWD : CONFIG.PUSHER_MAX_SPEED_BACK)
+    * (pusher.fast && dir > 0 ? 1.5 : 1);
+
+  const b = pusher.body;
+  const remaining = target - b.position.z;
+  const desired = Math.abs(remaining) < 0.0015
+    ? 0
+    : Math.sign(remaining) * Math.min(Math.abs(remaining) / Math.max(dt, 1e-4), maxSpeed);
+  const accel = 20.0 * dt;
+  b.velocity.z += clamp(desired - b.velocity.z, -accel, accel);
+
+  /* 行程硬夾：運動學推板若靠加速度煞停會衝過頭 0.3 單位，
+     把後牆與台面交界處的幣夾碎，所以位置直接夾住 */
+  const zMin = CONFIG.PUSHER_Z_MIN;
+  const zMax = CONFIG.PUSHER_Z_MIN + CONFIG.PUSHER_STROKE;
+  if (b.position.z < zMin) { b.position.z = zMin; if (b.velocity.z < 0) b.velocity.z = 0; }
+  else if (b.position.z > zMax) { b.position.z = zMax; if (b.velocity.z > 0) b.velocity.z = 0; }
+
+  pusher.mesh.position.set(b.position.x, b.position.y, b.position.z);
+}
+
+/* ============================================================
+   §13  投幣（滑軌當前位置）
+   ============================================================ */
+function dropCoin() {
+  if (settling) return;
+  if (state.wallet < 1) {
+    toast(state.score >= CONFIG.POINTS_PER_GAMECOIN ? '遊戲幣不足，請按「兌換」' : '遊戲幣不足，補幣中…');
+    sfx.click();
+    return;
+  }
+  if (CARRIAGE.cooldown > 0) return;
+  CARRIAGE.cooldown = CONFIG.CARRIAGE_COOLDOWN;
+
+  state.wallet--;
+  state.coinsInserted++;
+  if (state.coinsInserted % CONFIG.BALL_EVERY_N_COINS === 0) ballPending++;
+
+  /* 角度抖動 ±0.3°：讓落點不會完全固定（COIN_ANGLE_JITTER） */
+  const yawJitter = rand(-1, 1) * CONFIG.COIN_ANGLE_JITTER_DEG * D2R;
+
+  enforceBodyCap();
+  spawnCoin(
+    'coin',
+    CARRIAGE.x + rand(-0.03, 0.03),
+    CONFIG.CARRIAGE_Y,
+    CONFIG.CARRIAGE_Z,
+    Math.sin(yawJitter) * 0.6,
+    CONFIG.CARRIAGE_RELEASE_VY,
+    -0.35,
+    rand(0, Math.PI * 2)
+  );
+
+  sfx.ensure();
+  sfx.drop();
+  sfx.clink(0.10);
+  updateHUD();
+  saveState();
+}
+
+/* ============================================================
+   §14  判定區（Sensor + 幾何備援）
+   ============================================================ */
+let settling = true;
+const SLOT_Y = -0.62;
+
+/* cannon-es 會在 world.step() 內部派發 collide 事件，
+   此時若 addBody / removeBody 會弄壞求解迭代 → 一律延後到 step 之後處理 */
+const pendingResolve = [];
+
+const sensorBody = (() => {
+  const b = new CANNON.Body({ mass: 0 });
+  b.addShape(new CANNON.Box(new CANNON.Vec3(CONFIG.BED_W / 2 + 0.6, 0.5, 1.15)));
+  b.position.set(0, -0.78, BED_FRONT_Z + 0.55);
+  b.collisionResponse = false;
+  b.isTrigger = true;
+  b.addEventListener('collide', (ev) => {
+    const ent = ev.body && ev.body.__ent;
+    if (ent && ent.alive && !ent.scored) pendingResolve.push(ent);
+  });
+  world.addBody(b);
+  return b;
+})();
+
+function drainPendingResolve() {
+  if (pendingResolve.length === 0) return;
+  if (settling) { pendingResolve.length = 0; return; }
+  for (let i = 0; i < pendingResolve.length; i++) {
+    const e = pendingResolve[i];
+    if (e.alive && !e.scored) resolveEntity(e);
+  }
+  pendingResolve.length = 0;
+}
+
+function sweepResolve() {
+  if (settling) return;
+  for (let i = entities.length - 1; i >= 0; i--) {
+    const e = entities[i];
+    if (!e || !e.alive) continue;
+    const p = e.body.position;
+
+    if (!e.scored && (p.y < SLOT_Y || Math.abs(p.x) > CONFIG.BED_W / 2 + 0.15)) {
+      resolveEntity(e);
+      continue;
+    }
+    if (e.alive && (p.y < -1.9 || Math.abs(p.x) > 6.5 || p.z > 11 || p.z < -5)) {
+      release(e);
+    }
+  }
+}
+
+/* 結算：幣 = 1 分、金幣 = 1 幣、波波 = 抽獎 */
+function resolveEntity(e) {
+  if (!e.alive || e.scored) return;
+  e.scored = true;
+
+  if (e.kind === 'ball') {
+    const px = e.body.position.x;
+    const inSlot = Math.abs(px) <= CONFIG.BED_W / 2 + 0.1;
+    burstAt(e.body.position, 0xffd54a);
+    release(e);
+    sfx.ballIn();
+    if (inSlot) queueDraw();
+    else scheduleBallRespawn();
+    return;
+  }
+
+  if (e.kind === 'gold') {
+    addWallet(1, true);
+    sfx.score();
+    flyCoin(true);
+    return;
+  }
+
+  addScore(CONFIG.POINTS_PER_COIN);
+  sfx.score();
+  flyCoin(false);
+}
+
+/* --- 爆閃特效 --- */
+const bursts = [];
+function burstAt(pos, color) {
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX_GLOW, color, transparent: true, opacity: 1,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  }));
+  spr.position.set(pos.x, Math.max(pos.y, -0.2), pos.z);
+  spr.scale.set(1.2, 1.2, 1);
+  scene.add(spr);
+  bursts.push({ spr, life: 0.55, max: 0.55 });
+}
+function updateBursts(dt) {
+  for (let i = bursts.length - 1; i >= 0; i--) {
+    const b = bursts[i];
+    b.life -= dt;
+    const k = 1 - b.life / b.max;
+    b.spr.scale.setScalar(1.2 + k * 2.6);
+    b.spr.material.opacity = Math.max(0, 1 - k);
+    if (b.life <= 0) {
+      scene.remove(b.spr);
+      b.spr.material.dispose();
+      bursts.splice(i, 1);
+    }
+  }
+}
+
+/* ============================================================
+   §15  經濟狀態
+   ============================================================ */
+const SAVE_KEY = 'candy-pusher-v1';
+const state = {
+  wallet: CONFIG.START_WALLET,
+  score: 0,
+  smallJp: 0,
+  bigJp: 0,
+  coinsInserted: 0,
+  shakeLeft: CONFIG.SHAKE_USES_PER_GAME,
+  shakeCd: 0,
+  boostCd: 0,
+  refillT: 0,
+};
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (typeof s.wallet === 'number') state.wallet = clamp(s.wallet, 0, CONFIG.WALLET_CAP);
+    if (typeof s.score === 'number') state.score = Math.max(0, Math.floor(s.score));
+    if (typeof s.smallJp === 'number') state.smallJp = s.smallJp % CONFIG.SMALL_JP_TO_BIG_JP;
+    if (typeof s.bigJp === 'number') state.bigJp = s.bigJp;
+  } catch (err) { /* 無存檔 */ }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      wallet: state.wallet,
+      score: state.score,
+      smallJp: state.smallJp,
+      bigJp: state.bigJp
+    }));
+  } catch (err) { /* 忽略 */ }
+}
+
+function addWallet(n, quiet) {
+  state.wallet = clamp(state.wallet + n, 0, CONFIG.WALLET_CAP);
+  if (n > 0 && !quiet) toast('+' + n + ' 遊戲幣');
+  updateHUD();
+  saveState();
+}
+
+/* 分數只累積，不自動換幣 —— 兌換由玩家手動觸發 */
+function addScore(n) {
+  state.score += n;
+  updateHUD();
+  saveState();
+}
+
+/* 手動兌換：5 分 → 1 遊戲幣（一次把所有可換的都換掉） */
+function exchangeScore() {
+  const coins = Math.floor(state.score / CONFIG.POINTS_PER_GAMECOIN);
+  if (coins <= 0) { sfx.click(); return; }
+  const used = coins * CONFIG.POINTS_PER_GAMECOIN;
+
+  state.score -= used;
+  state.wallet = clamp(state.wallet + coins, 0, CONFIG.WALLET_CAP);
+
+  sfx.ensure();
+  sfx.win(coins >= 10 ? 2 : 1);
+  flashPill('pillWallet');
+  toast('−' + used + ' 分 → +' + coins + ' 遊戲幣');
+  for (let i = 0; i < Math.min(coins, 5); i++) flyCoin(false);
+  updateHUD();
+  saveState();
+}
+
+/* ============================================================
+   §16  HUD
+   ============================================================ */
+const dJpDots = $('jpDots').children;
+const btnExchange = $('btnExchange');
+let toastTimer = 0;
+
+function updateHUD() {
+  $('walletTxt').textContent = state.wallet;
+  $('scoreTxt').textContent = state.score;
+
+  const coins = Math.floor(state.score / CONFIG.POINTS_PER_GAMECOIN);
+  btnExchange.disabled = coins <= 0;
+  $('exTxt').textContent = coins > 0
+    ? '兌換 ' + coins + ' 幣'
+    : '5 分 = 1 幣';
+
+  for (let i = 0; i < 5; i++) dJpDots[i].classList.toggle('on', i < state.smallJp);
+  $('jpTxt').textContent = state.smallJp + '/5';
+  $('ballTxt').textContent = ballPool.list.length + ' / ' + CONFIG.BALL_MAX;
+  $('shakeCnt').textContent = '×' + state.shakeLeft;
+}
+
+function flashPill(id) {
+  const el = $(id);
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+}
+
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+/* 3D → 2D 飛幣 */
+let flyCount = 0;
+function flyCoin(isGold) {
+  if (flyCount >= 5) return;
+  flyCount++;
+  const w = innerWidth, h = innerHeight;
+  const el = document.createElement('div');
+  el.className = 'flycoin' + (isGold ? ' gold' : '');
+  const sx = w / 2 + rand(-110, 110);
+  const sy = h * 0.64;
+  el.style.left = sx + 'px';
+  el.style.top = sy + 'px';
+  document.body.appendChild(el);
+  const anim = el.animate([
+    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+    { transform: 'translate(' + (w * 0.18) + 'px,' + (-h * 0.30) + 'px) scale(1.1)', opacity: 1, offset: 0.45 },
+    { transform: 'translate(' + (-sx + 120) + 'px,' + (-sy + 34) + 'px) scale(.4)', opacity: 0 }
+  ], { duration: 620, easing: 'cubic-bezier(.4,0,.2,1)' });
+  anim.onfinish = () => { el.remove(); flyCount--; };
+  anim.oncancel = () => { el.remove(); flyCount--; };
+}
+
+/* ============================================================
+   §17  抽獎系統
+   ============================================================ */
+const drawQueue = [];
+let drawing = false;
+let wheelRot = 0;
+let drawCtx = null;
+
+const wheelEl = $('wheel');
+const wheelPanel = $('wheelPanel');
+const wheelResult = $('wheelResult');
+const queueBadge = $('queueBadge');
+
+/* 轉盤扇區文字（以圓心定位） */
+(function buildWheelLabels() {
+  ['10', '50', '100', 'JP'].forEach((txt, i) => {
+    const d = document.createElement('div');
+    d.className = 'sector-txt';
+    d.textContent = txt;
+    const ang = (i * 90 + 45) * D2R;
+    const r = 50;
+    d.style.left = (75 + Math.sin(ang) * r) + 'px';
+    d.style.top = (75 - Math.cos(ang) * r) + 'px';
+    wheelEl.appendChild(d);
+  });
+})();
+
+function queueDraw() {
+  drawQueue.push(1);
+  queueBadge.textContent = '×' + drawQueue.length;
+  queueBadge.classList.toggle('show', drawQueue.length > 0);
+  pumpDraw();
+}
+
+function pickResult() {
+  if (state.smallJp >= CONFIG.SMALL_JP_TO_BIG_JP) return 'BIG';
+  const total = CONFIG.W_10 + CONFIG.W_50 + CONFIG.W_100 + CONFIG.W_JP;
+  const roll = rand(0, total);
+  if (roll < CONFIG.W_10) return '10';
+  if (roll < CONFIG.W_10 + CONFIG.W_50) return '50';
+  if (roll < CONFIG.W_10 + CONFIG.W_50 + CONFIG.W_100) return '100';
+  return 'JP';
+}
+
+function pumpDraw() {
+  if (drawing || drawQueue.length === 0) return;
+  drawing = true;
+  drawQueue.shift();
+  queueBadge.textContent = '×' + (drawQueue.length + 1);
+  queueBadge.classList.toggle('show', drawQueue.length > 0);
+
+  const result = pickResult();
+  wheelPanel.classList.add('show');
+
+  if (result === 'BIG') {
+    wheelResult.textContent = '大 JACKPOT !!';
+    drawCtx = { result: 'BIG', applied: false, timer: 0, tickTimer: 0 };
+    drawCtx.timer = setTimeout(() => {
+      wheelPanel.classList.remove('show');
+      playBigJackpot();
+    }, 380);
+    return;
+  }
+
+  const idx = { '10': 0, '50': 1, '100': 2, 'JP': 3 }[result];
+  const targetAngle = (360 - (idx * 90 + 45)) % 360;
+  const base = wheelRot - (wheelRot % 360);
+  let next = base + 360 * 4 + targetAngle;
+  while (next <= wheelRot + 200) next += 360;
+  wheelRot = next;
+  wheelEl.style.transform = 'rotate(' + wheelRot + 'deg)';
+
+  wheelResult.textContent = '抽獎中…';
+
+  let ticks = 0;
+  const tickTimer = setInterval(() => {
+    ticks++;
+    sfx.tick(1 - ticks * 0.03);
+    if (ticks > 16) clearInterval(tickTimer);
+  }, 95);
+
+  drawCtx = { result, applied: false, timer: 0, tickTimer };
+  drawCtx.timer = setTimeout(() => {
+    clearInterval(tickTimer);
+    applyResult(result);
+  }, CONFIG.DRAW_ANIM_MS + 90);
+}
+
+/* 點擊轉盤 = 跳過演出（大 JP 不可跳過，避免誤觸取消） */
+wheelPanel.addEventListener('click', () => {
+  if (!drawCtx || drawCtx.applied) return;
+  if (drawCtx.result === 'BIG') return;
+  clearTimeout(drawCtx.timer);
+  clearInterval(drawCtx.tickTimer);
+  wheelEl.style.transition = 'none';
+  wheelEl.style.transform = 'rotate(' + wheelRot + 'deg)';
+  void wheelEl.offsetWidth;
+  wheelEl.style.transition = '';
+  applyResult(drawCtx.result);
+});
+
+function applyResult(result) {
+  if (!drawCtx || drawCtx.applied) return;
+  drawCtx.applied = true;
+
+  if (result === '10') {
+    wheelResult.textContent = '10 幣！';
+    sfx.win(1);
+    spillGold(10);
+  } else if (result === '50') {
+    wheelResult.textContent = '50 幣！';
+    sfx.win(2);
+    spillGold(50);
+  } else if (result === '100') {
+    wheelResult.textContent = '100 幣！';
+    sfx.win(2);
+    spillGold(100);
+  } else if (result === 'JP') {
+    wheelResult.textContent = '小 JACKPOT！100 幣';
+    sfx.win(3);
+    spillGold(100);
+    state.smallJp = Math.min(state.smallJp + 1, CONFIG.SMALL_JP_TO_BIG_JP);
+    updateHUD();
+    saveState();
+    if (state.smallJp >= CONFIG.SMALL_JP_TO_BIG_JP) toast('JP 集滿！下一抽必中');
+  }
+
+  setTimeout(() => {
+    wheelPanel.classList.remove('show');
+    drawing = false;
+    pumpDraw();
+  }, 800);
+}
+
+/* --- 大 JP --- */
+function playBigJackpot() {
+  const overlay = $('jpOverlay');
+  overlay.classList.add('show');
+  sfx.jackpot();
+
+  state.smallJp = 0;
+  state.bigJp++;
+  addWallet(CONFIG.BIG_JP_VALUE, true);
+
+  const numEl = $('jpNum');
+  const t0 = performance.now();
+  const dur = 2400;
+  const top = CONFIG.BIG_JP_VALUE;
+  const step = () => {
+    const k = Math.min(1, (performance.now() - t0) / dur);
+    const eased = 1 - Math.pow(1 - k, 3);
+    numEl.textContent = Math.floor(top * eased);
+    if (k < 1) requestAnimationFrame(step);
+    else numEl.textContent = top;
+  };
+  step();
+
+  goldWaterfall();
+
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    drawing = false;
+    pumpDraw();
+  }, 3300);
+}
+
+/* --- 獎勵金幣 --- */
+let goldRemaining = 0;
+let goldTimer = 0;
+
+function spillGold(n) {
+  goldRemaining += n;
+  goldTimer = 0;
+}
+
+function updateGoldSpill(dt) {
+  if (goldRemaining <= 0) return;
+  goldTimer -= dt;
+  if (goldTimer > 0) return;
+  goldTimer = 1 / CONFIG.GOLD_SPILL_RATE;
+  if (goldPool.list.length >= CONFIG.GOLD_MAX) return;
+
+  enforceBodyCap();
+  spawnCoin(
+    'gold',
+    rand(-1.7, 1.7), 3.6,
+    rand(BED_FRONT_Z + 0.38, BED_FRONT_Z + 0.75),
+    rand(-0.2, 0.2), -0.4, rand(0, 0.3), rand(0, 6.28)
+  );
+  goldRemaining--;
+}
+
+/* --- 大 JP 非物理金幣瀑布 --- */
+let waterfall = null;
+function goldWaterfall() {
+  const N = IS_MOBILE ? 700 : 2000;
+  const inst = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.16, 0.05, 0.16),
+    new THREE.MeshStandardMaterial({
+      color: 0xffd54a, emissive: 0xffa000, emissiveIntensity: 1.4,
+      metalness: 0.8, roughness: 0.2
+    }),
+    N
+  );
+  inst.frustumCulled = false;
+  scene.add(inst);
+
+  const data = [];
+  for (let i = 0; i < N; i++) {
+    data.push({
+      x: rand(-7, 7), y: rand(6, 26), z: rand(-2, 6),
+      vy: rand(-9, -5), rx: rand(0, 6), ry: rand(0, 6), rz: rand(0, 6),
+      sx: rand(2, 7), sy: rand(2, 7), sz: rand(2, 7)
+    });
+  }
+  waterfall = { inst, data, life: 3.0 };
+}
+
+function updateWaterfall(dt) {
+  if (!waterfall) return;
+  waterfall.life -= dt;
+  const d = _ent;
+  for (let i = 0; i < waterfall.data.length; i++) {
+    const p = waterfall.data[i];
+    p.y += p.vy * dt;
+    if (p.y < -2) p.y = rand(14, 26);
+    p.rx += p.sx * dt;
+    p.ry += p.sy * dt;
+    p.rz += p.sz * dt;
+    d.position.set(p.x, p.y, p.z);
+    d.rotation.set(p.rx, p.ry, p.rz);
+    d.updateMatrix();
+    waterfall.inst.setMatrixAt(i, d.matrix);
+  }
+  waterfall.inst.instanceMatrix.needsUpdate = true;
+
+  if (waterfall.life <= 0) {
+    scene.remove(waterfall.inst);
+    waterfall.inst.geometry.dispose();
+    waterfall.inst.material.dispose();
+    waterfall = null;
+  }
+}
+
+/* ============================================================
+   §18  波波系統
+   ============================================================ */
+let ballPending = 0;
+let ballSpawnTimer = 1.2;
+const ballRespawnTimers = [];
+
+function scheduleBallRespawn() {
+  ballRespawnTimers.push(CONFIG.BALL_RESPAWN_DELAY);
+}
+
+function updateBallSystem(dt) {
+  for (let i = ballRespawnTimers.length - 1; i >= 0; i--) {
+    ballRespawnTimers[i] -= dt;
+    if (ballRespawnTimers[i] <= 0) {
+      ballRespawnTimers.splice(i, 1);
+      ballPending++;
+    }
+  }
+
+  ballSpawnTimer -= dt;
+  if (ballSpawnTimer <= 0 && ballPending > 0 && ballPool.list.length < CONFIG.BALL_MAX) {
+    ballPending--;
+    ballSpawnTimer = 1.4;
+    spawnBall(rand(-1.2, 1.2), 3.4, 3.0);
+    updateHUD();
+  }
+}
+
+/* --- 幣塔自動補幣：台面幣量過低時從塔頂漏幣，避免場面變空 --- */
+let autoFeedTimer = 0;
+function updateAutoFeed(dt) {
+  if (settling) return;
+  if (coinPool.list.length >= CONFIG.AUTO_FEED_BELOW) return;
+  autoFeedTimer -= dt;
+  if (autoFeedTimer > 0) return;
+  autoFeedTimer = CONFIG.AUTO_FEED_INTERVAL;
+  enforceBodyCap();
+  const x = rand(-2.6, 2.6);
+  const z = rand(3.3, CONFIG.BED_D - 0.5);
+  spawnCoin('coin', x, bedY(z) + 1.6, z, 0, -0.6, 0, rand(0, 6.283));
+}
+
+/* ============================================================
+   §19  干預：搖機 / 推進器
+   ============================================================ */
+function doShake() {
+  if (state.shakeLeft <= 0) { toast('本局搖機次數已用盡'); return; }
+  if (state.shakeCd > 0) return;
+  state.shakeLeft--;
+  state.shakeCd = CONFIG.SHAKE_COOLDOWN;
+  camShake = 1;
+  sfx.shake();
+
+  for (const e of entities) {
+    if (!e.alive) continue;
+    const b = e.body;
+    const k = rand(CONFIG.SHAKE_IMPULSE_MIN, CONFIG.SHAKE_IMPULSE_MAX);
+    const ang = rand(0, Math.PI * 2);
+    b.wakeUp();
+    b.sleepState = CANNON.Body.AWAKE;
+    b.velocity.x += Math.cos(ang) * k * 0.55;
+    b.velocity.z += Math.sin(ang) * k * 0.55;
+    b.velocity.y += k * 0.40;
+    b.angularVelocity.x += rand(-7, 7);
+    b.angularVelocity.z += rand(-7, 7);
+  }
+  updateHUD();
+}
+
+function doBoost() {
+  if (!CONFIG.BOOST_ENABLED || state.boostCd > 0) return;
+  state.boostCd = CONFIG.BOOST_COOLDOWN;
+  pusher.fast = true;
+
+  const fwdEnd = CONFIG.PUSHER_FWD_TIME;
+  const dwellEnd = fwdEnd + CONFIG.PUSHER_FWD_DWELL;
+  if (pusher.t > dwellEnd) pusher.t = CONFIG.PUSHER_CYCLE - 0.02;
+
+  setTimeout(() => { pusher.fast = false; }, 1200);
+  sfx.click();
+  toast('推進器啟動！');
+}
+
+/* ============================================================
+   §20  輸入
+   ============================================================ */
+let holdTimer = 0;
+let holding = false;
+
+/* 單一投幣鍵：按一下 = 在滑軌當前位置落幣；長按 = 連投 */
+function bindInsert() {
+  const btn = $('btnInsert');
+  const end = () => {
+    holding = false;
+    clearTimeout(holdTimer);
+  };
+  btn.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    if (holding) return;
+    holding = true;
+    sfx.ensure();
+    dropCoin();
+    const loop = () => {
+      if (!holding) return;
+      dropCoin();
+      holdTimer = setTimeout(loop, 160);
+    };
+    holdTimer = setTimeout(loop, 160);
+  });
+  btn.addEventListener('pointerup', end);
+  btn.addEventListener('pointerleave', end);
+  btn.addEventListener('pointercancel', end);
+}
+
+bindInsert();
+$('btnShake').addEventListener('click', () => { sfx.ensure(); doShake(); });
+$('btnBoost').addEventListener('click', () => { sfx.ensure(); doBoost(); });
+btnExchange.addEventListener('click', () => { sfx.ensure(); exchangeScore(); });
+
+addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ' || k === 'enter') { e.preventDefault(); sfx.ensure(); dropCoin(); }
+  else if (k === 's') { e.preventDefault(); doShake(); }
+  else if (k === 'b') { e.preventDefault(); doBoost(); }
+  else if (k === 'e') { e.preventDefault(); exchangeScore(); }
+  else if (k === 'd') $('debug').classList.toggle('show');
+});
+
+/* 點擊 3D 畫面也可以投幣（拖曳則視為轉相機） */
+let dragging = false, dragX = 0, dragOrbit = 0, dragMoved = 0;
+canvas.addEventListener('pointerdown', (e) => {
+  dragging = true;
+  dragX = e.clientX;
+  dragOrbit = camOrbitTarget;
+  dragMoved = 0;
+});
+addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  const d = e.clientX - dragX;
+  dragMoved = Math.max(dragMoved, Math.abs(d));
+  camOrbitTarget = clamp(dragOrbit + d * 0.0016, -8 * D2R, 8 * D2R);
+});
+addEventListener('pointerup', () => {
+  if (!dragging) return;
+  dragging = false;
+  if (dragMoved < 8) { sfx.ensure(); dropCoin(); }   // 只是點一下 → 投幣
+  camOrbitTarget = 0;
+});
+
+/* 工具列 */
+$('btnSound').addEventListener('click', (e) => {
+  sfx.ensure();
+  sfx.on = !sfx.on;
+  e.currentTarget.textContent = sfx.on ? '🔊' : '🔇';
+});
+$('btnDebug').addEventListener('click', () => $('debug').classList.toggle('show'));
+$('btnReset').addEventListener('click', () => {
+  if (confirm('要重新開始嗎？（分數與錢包會重置）')) {
+    localStorage.removeItem(SAVE_KEY);
+    location.reload();
+  }
+});
+
+/* ============================================================
+   §21  開局預載幣堆
+   ============================================================ */
+function preloadCoins() {
+  const rows = 4, cols = 11;
+  const x0 = -3.4, x1 = 3.4;
+  /* 前沿只離落幣口 0.25：推幣機真正的樣子是幣已經「掛在」邊緣上 */
+  const zFront = CONFIG.BED_D - 0.45;
+  const zBack = 2.70;
+  let full = false;
+
+  for (let layer = 0; layer < 2 && !full; layer++) {
+    for (let r = 0; r < rows; r++) {
+      const tz = rows === 1 ? 0 : r / (rows - 1);
+      const z = lerp(zFront, zBack, tz) + rand(-0.04, 0.04);
+      for (let c = 0; c < cols; c++) {
+        if (activeCount >= PRELOAD) { full = true; break; }
+        const tx = c / (cols - 1);
+        const x = lerp(x0, x1, tx) + (layer ? 0.31 : 0);
+        const y = bedY(z) + CONFIG.COIN_THICKNESS / 2 + 0.014
+          + layer * (CONFIG.COIN_THICKNESS + 0.006);
+        spawnCoin('coin', x, y, z, 0, 0, 0, rand(0, 6.283));
+      }
+    }
+  }
+
+  let guard = 0;
+  while (activeCount < PRELOAD && guard++ < 900) {
+    const x = rand(-3.4, 3.4);
+    const z = rand(zBack, zFront);
+    const y = bedY(z) + 0.06 + rand(0, 0.46);
+    spawnCoin('coin', x, y, z, 0, 0, 0, rand(0, 6.283));
+  }
+}
+
+/* ============================================================
+   §22  主迴圈
+   ============================================================ */
+let lastT = performance.now();
+let physMs = 0, fpsAcc = 0, fpsN = 0, fps = 60;
+
+function tick() {
+  requestAnimationFrame(tick);
+  const now = performance.now();
+  let dt = (now - lastT) / 1000;
+  lastT = now;
+  if (dt > 0.1) dt = 0.1;
+
+  /* --- 物理 --- */
+  const p0 = performance.now();
+  updatePusher(dt);
+  world.step(CONFIG.FIXED_STEP, dt, CONFIG.MAX_SUB_STEPS);
+  physMs = lerp(physMs, performance.now() - p0, 0.1);
+
+  /* --- 系統 --- */
+  updateCarriage(dt);
+  drainPendingResolve();
+  sweepResolve();
+  updateBallSystem(dt);
+  updateAutoFeed(dt);
+  updateGoldSpill(dt);
+  updateBursts(dt);
+  updateWaterfall(dt);
+
+  state.shakeCd = Math.max(0, state.shakeCd - dt);
+  state.boostCd = Math.max(0, state.boostCd - dt);
+
+  /* --- 破產補幣 --- */
+  if (state.wallet < 1) {
+    state.refillT += dt;
+    if (state.refillT >= CONFIG.REFILL_INTERVAL) {
+      state.refillT = 0;
+      state.wallet = clamp(state.wallet + 1, 0, CONFIG.WALLET_CAP);
+      updateHUD();
+      toast('免費補幣 +1');
+    }
+  } else {
+    state.refillT = 0;
+  }
+
+  /* --- 視覺同步 --- */
+  coinPool.sync();
+  goldPool.sync();
+  ballPool.sync();
+
+  /* --- 相機 --- */
+  camOrbit = lerp(camOrbit, camOrbitTarget, 1 - Math.pow(0.001, dt));
+  const cs = camShake > 0 ? camShake * 0.055 : 0;
+  camShake = Math.max(0, camShake - dt * 6.5);
+  const ox = Math.sin(camOrbit) * 10.4;
+  const oz = Math.cos(camOrbit) * 10.4 - 10.4;
+  camera.position.set(
+    CAM_BASE.x + ox + rand(-cs, cs),
+    CAM_BASE.y + rand(-cs, cs),
+    CAM_BASE.z + oz
+  );
+  camera.lookAt(CAM_TARGET);
+
+  /* --- 背景動畫 --- */
+  if (backdrop) {
+    const { inst, data } = backdrop;
+    const d = _ent;
+    for (let i = 0; i < data.length; i++) {
+      const p = data[i];
+      p.ph += dt * p.sp;
+      d.position.set(p.x, p.y + Math.sin(p.ph) * 0.8, p.z);
+      d.rotation.set(p.ph * 0.5, p.ph * p.rot, 0);
+      d.scale.setScalar(p.s);
+      d.updateMatrix();
+      inst.setMatrixAt(i, d.matrix);
+    }
+    inst.instanceMatrix.needsUpdate = true;
+  }
+  if (towerGlowSprite) {
+    const k = 1 + Math.sin(now * 0.0022) * 0.09;
+    towerGlowSprite.scale.set(5 * k, 5 * k, 1);
+  }
+  towerLightA.intensity = 20 + Math.sin(now * 0.003) * 5;
+
+  /* --- UI --- */
+  const shakeBtn = $('btnShake');
+  if (state.shakeCd > 0) {
+    shakeBtn.classList.add('cooling');
+    shakeBtn.style.setProperty('--p', ((1 - state.shakeCd / CONFIG.SHAKE_COOLDOWN) * 100) + '%');
+  } else {
+    shakeBtn.classList.remove('cooling');
+  }
+  shakeBtn.disabled = state.shakeLeft <= 0;
+
+  const boostBtn = $('btnBoost');
+  boostBtn.disabled = (state.boostCd > 0) || !CONFIG.BOOST_ENABLED;
+  boostBtn.textContent = state.boostCd > 0
+    ? '冷卻 ' + state.boostCd.toFixed(1) + 's'
+    : '推進器 ⚡';
+
+  /* --- 除錯 --- */
+  if ($('debug').classList.contains('show')) {
+    fpsAcc += dt; fpsN++;
+    if (fpsAcc > 0.4) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
+    let awake = 0;
+    for (const e of entities) if (e.body.sleepState !== CANNON.Body.SLEEPING) awake++;
+    $('debug').textContent =
+      'FPS       ' + fps.toFixed(0) + '\n' +
+      '物理      ' + physMs.toFixed(2) + ' ms\n' +
+      '剛體      ' + activeCount + ' / ' + MAX_BODIES + '\n' +
+      '喚醒      ' + awake + '\n' +
+      '幣池      ' + coinPool.list.length + '\n' +
+      '金幣      ' + goldPool.list.length + '\n' +
+      '波波      ' + ballPool.list.length + ' (待 ' + ballPending + ')\n' +
+      '回收      ' + recyclingCount + '\n' +
+      'drawCall  ' + renderer.info.render.calls;
+  }
+
+  renderer.render(scene, camera);
+}
+
+/* ============================================================
+   §23  啟動
+   ============================================================ */
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(devicePixelRatio, CONFIG.PIXEL_RATIO_CAP));
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+function boot() {
+  loadSave();
+  updateHUD();
+
+  const bar = $('loaderBar');
+  const overlay = $('loader');
+
+  requestAnimationFrame(() => {
+    bar.style.width = '25%';
+    preloadCoins();
+
+    setTimeout(() => {
+      /* 預沉降：不渲染、不計分 */
+      settling = true;
+      for (let i = 0; i < 100; i++) {
+        updatePusher(CONFIG.FIXED_STEP);
+        world.step(CONFIG.FIXED_STEP);
+      }
+      settling = false;
+      bar.style.width = '72%';
+
+      setTimeout(() => {
+        coinPool.sync();
+        bar.style.width = '100%';
+        updateHUD();
+
+        /* 開局贈送波波 */
+        for (let i = 0; i < CONFIG.BALL_INITIAL_FREE; i++) {
+          setTimeout(() => { ballPending++; }, 700 + i * 1500);
+        }
+
+        setTimeout(() => {
+          overlay.classList.add('hide');
+          setTimeout(() => overlay.remove(), 620);
+        }, 240);
+
+        lastT = performance.now();
+        tick();
+      }, 140);
+    }, 140);
+  });
+}
+
+boot();
+
+/* 除錯介面（Console 可用：__game.dropCoin()、__game.exchangeScore() 等） */
+window.__game = {
+  CONFIG, world, state, entities, camera, pusher, renderer, scene, CARRIAGE,
+  coinPool, goldPool, ballPool, drawQueue,
+  dropCoin, exchangeScore, doShake, doBoost, spawnBall, queueDraw, spillGold,
+  resolveEntity, enforceBodyCap, spawnCoin, release,
+  stats() {
+    let awake = 0, sleeping = 0;
+    for (const e of entities) {
+      if (e.body.sleepState === CANNON.Body.SLEEPING) sleeping++;
+      else if (e.body.sleepState === CANNON.Body.AWAKE) awake++;
+    }
+    return {
+      bodies: entities.length, awake, sleeping,
+      wallet: state.wallet, score: state.score,
+      balls: ballPool.list.length, gold: goldPool.list.length,
+      pusherZ: +pusher.body.position.z.toFixed(3),
+      recycling: recyclingCount,
+      physMs: +physMs.toFixed(2),
+    };
+  },
+};
+</script>
+</body>
+</html>
+
+
