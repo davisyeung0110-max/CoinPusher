@@ -90,13 +90,14 @@ button.pill.ex:active{transform:translateY(2px) scale(.98)}
 }
 
 /* ---------- 底部操作列 ---------- */
+/* ---------- 底部拇指區 ---------- */
 #controls{
   position:absolute;left:0;right:0;bottom:0;z-index:10;
-  display:flex;justify-content:center;align-items:flex-end;flex-wrap:wrap;
-  padding:0 22px 22px;gap:20px;pointer-events:none;
+  display:flex;justify-content:center;align-items:flex-end;
+  padding:0 12px calc(14px + env(safe-area-inset-bottom, 0px)) 12px;
+  gap:12px;pointer-events:none;
 }
 #controls > *{pointer-events:auto}
-.center-col{display:flex;flex-direction:column;align-items:center;gap:9px}
 
 .btn{
   position:relative;border:none;cursor:pointer;font-family:var(--font);
@@ -114,16 +115,19 @@ button.pill.ex:active{transform:translateY(2px) scale(.98)}
   background:rgba(0,0,0,.28);border-radius:6px;padding:2px 7px;vertical-align:middle;
 }
 .btn.insert.main{
-  min-width:216px;padding:18px 34px 14px;font-size:20px;letter-spacing:.12em;
-  border-radius:22px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  flex:1 1 auto;max-width:300px;min-height:82px;padding:14px 20px 12px;
+  font-size:22px;letter-spacing:.12em;border-radius:22px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   background:linear-gradient(180deg,#ffe58a,#f59e0b);color:#3b1263;
   box-shadow:0 9px 0 #b45309,0 16px 34px rgba(245,158,11,.55),inset 0 1px 0 rgba(255,255,255,.75);
+  touch-action:none;
 }
 .btn.insert.main:active{
+  transform:translateY(6px);
   box-shadow:0 3px 0 #b45309,0 8px 16px rgba(245,158,11,.5),inset 0 1px 0 rgba(255,255,255,.75);
 }
-.btn.insert.main .k{background:rgba(59,18,99,.18);color:#3b1263;margin-right:0}
-.btn.insert.main .sub{font-size:10px;font-weight:700;letter-spacing:.04em;opacity:.68}
+.btn.insert.main .k{display:none}
+.btn.insert.main .sub{font-size:10px;font-weight:700;letter-spacing:.04em;opacity:.68;margin-top:4px}
 
 /* 搖機 */
 .btn.shake{
@@ -154,15 +158,19 @@ button.pill.ex:active{transform:translateY(2px) scale(.98)}
 }
 .btn.boost:active{box-shadow:0 2px 0 #155e75,0 5px 12px rgba(8,145,178,.4), inset 0 1px 0 rgba(255,255,255,.5)}
 
-/* 右下工具 */
-#tools{position:absolute;right:18px;bottom:18px;z-index:11;display:flex;gap:8px}
+/* 側邊工具列（直向：貼右側垂直排列，避開拇指區） */
+#tools{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  z-index:11;display:flex;flex-direction:column;gap:8px;
+}
 .tool{
-  width:36px;height:36px;border-radius:10px;border:1px solid var(--glass-brd);
-  background:var(--glass);color:var(--purple-light);font-size:15px;cursor:pointer;
+  width:42px;height:42px;border-radius:12px;border:1px solid var(--glass-brd);
+  background:var(--glass);color:var(--purple-light);font-size:17px;cursor:pointer;
   backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;
-  transition:color .15s,border-color .15s;
+  transition:color .15s,border-color .15s,opacity .15s;touch-action:none;
 }
 .tool:hover{color:#fff;border-color:var(--purple-light)}
+.tool:disabled{opacity:.4}
 
 /* ---------- 抽獎轉盤 ---------- */
 #wheelPanel{
@@ -248,21 +256,33 @@ button.pill.ex:active{transform:translateY(2px) scale(.98)}
 .jp-sub{font-size:13px;letter-spacing:.4em;color:var(--purple-light);animation:jpIn .7s .2s both}
 @keyframes jpIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* ---------- 橫式提示 ---------- */
-#rotateHint{
+/* ---------- 玩法說明 ---------- */
+#rulesPanel{
   position:absolute;inset:0;z-index:60;display:none;
-  flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  background:linear-gradient(160deg,#2a0a4a,#12041f);text-align:center;padding:24px;
+  align-items:center;justify-content:center;padding:22px;
+  background:rgba(10,2,20,.82);backdrop-filter:blur(6px);
 }
-#rotateHint .ico{
-  width:62px;height:106px;border-radius:12px;border:3px solid var(--purple-light);
-  animation:rotatePhone 2s ease-in-out infinite;
+#rulesPanel.show{display:flex}
+.rules-card{
+  width:100%;max-width:380px;max-height:82vh;overflow:auto;
+  background:linear-gradient(180deg,rgba(59,18,99,.98),rgba(26,7,48,.98));
+  border:1px solid var(--glass-brd);border-radius:20px;padding:20px 20px 18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);font-size:13.5px;line-height:1.85;
 }
-@keyframes rotatePhone{0%,40%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
-#rotateHint p{color:var(--purple-light);font-size:15px;letter-spacing:.1em}
-@media (orientation:portrait) and (max-width:900px){
-  #rotateHint{display:flex}
+.rules-card h2{
+  font-size:17px;letter-spacing:.1em;margin-bottom:10px;
+  background:linear-gradient(180deg,#fff,#c4a3ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
 }
+.rules-card p{color:#e3d8ff;margin-bottom:6px}
+.rules-card b{color:#ffd54a}
+.rules-card button{
+  margin-top:14px;width:100%;padding:13px;border:none;border-radius:14px;
+  font-family:var(--font);font-size:15px;font-weight:900;letter-spacing:.1em;
+  color:#3b1263;background:linear-gradient(180deg,#ffe58a,#f59e0b);
+  box-shadow:0 5px 0 #b45309;cursor:pointer;
+}
+.rules-card button:active{transform:translateY(4px);box-shadow:0 1px 0 #b45309}
 
 /* ---------- 載入 ---------- */
 #loader{
@@ -308,6 +328,51 @@ button.pill.ex:active{transform:translateY(2px) scale(.98)}
   box-shadow:0 0 12px rgba(255,200,70,.95);pointer-events:none;
 }
 .flycoin.gold{background:radial-gradient(circle at 32% 28%,#fff8d0,#ffd54a 55%,#f59e0b)}
+
+/* ============================================================
+   手機直向（Portrait）適配
+   ============================================================ */
+html,body{height:100%;height:100dvh;overflow:hidden}
+@supports (padding: env(safe-area-inset-bottom)){
+  #hud{padding-top:calc(10px + env(safe-area-inset-top, 0px))}
+}
+
+@media (max-width:560px){
+  #hud{padding:10px 8px;gap:6px}
+  .hud-group{gap:6px}
+  .pill{padding:5px 9px;gap:5px;border-radius:999px}
+  .pill .lbl{font-size:10px}
+  .pill .val{font-size:15px}
+  .pill .val.small{font-size:11px}
+  .dots i{width:9px;height:9px}
+  .dots.jp i{width:7px;height:7px}
+  button.pill.ex{padding:5px 9px}
+
+  .btn.shake{width:88px;height:88px}
+  .btn.shake .txt{font-size:15px}
+
+  #wheelPanel{right:6px;bottom:104px}
+  .wheel-wrap{width:118px;height:118px}
+  .wheel-pointer{border-left-width:8px;border-right-width:8px;border-top-width:14px}
+  .wheel-hub{width:34px;height:34px;font-size:9px}
+  .wheel .sector-txt{font-size:9px}
+  .wheel-result{font-size:11px;padding:5px 10px;min-width:96px}
+
+  #tools{right:6px;gap:6px}
+  .tool{width:38px;height:38px;font-size:15px;border-radius:11px}
+
+  #debug{font-size:10px;padding:8px 10px;top:64px;right:8px}
+  #toast{font-size:12px;padding:8px 14px;top:76px;max-width:88vw;white-space:normal;text-align:center}
+  .rules-card{padding:16px;font-size:13px}
+}
+
+/* 極窄（iPhone SE 級）再縮一級 */
+@media (max-width:380px){
+  .pill{padding:4px 8px}
+  .pill .val{font-size:14px}
+  .btn.insert.main{min-height:74px;font-size:20px}
+  .btn.shake{width:78px;height:78px}
+}
 </style>
 </head>
 <body>
@@ -359,14 +424,15 @@ button.pill.ex:active{transform:translateY(2px) scale(.98)}
     <span class="cnt" id="shakeCnt">×10</span>
   </button>
   <button class="btn insert main" id="btnInsert">
-    <span class="k">SPACE</span>投　幣
-    <span class="sub">在滑軌當前位置落下</span>
+    投　幣
+    <span class="sub">點畫面任何位置也可投幣</span>
   </button>
-  <button class="btn boost" id="btnBoost">推進器 ⚡</button>
 </div>
 
 <div id="tools">
+  <button class="tool" id="btnBoost" title="推進器">⚡</button>
   <button class="tool" id="btnSound" title="音效">🔊</button>
+  <button class="tool" id="btnRules" title="玩法說明">？</button>
   <button class="tool" id="btnDebug" title="除錯 (D)">◧</button>
   <button class="tool" id="btnReset" title="重新開始">⟳</button>
 </div>
@@ -382,9 +448,19 @@ button.pill.ex:active{transform:translateY(2px) scale(.98)}
 <div id="debug"></div>
 <div id="toast"></div>
 
-<div id="rotateHint">
-  <div class="ico"></div>
-  <p>請將手機橫放以獲得最佳體驗</p>
+<div id="rulesPanel">
+  <div class="rules-card">
+    <h2>玩法說明</h2>
+    <p>1. 按<b>「投幣」</b>（或點畫面），硬幣會從<b>正上方</b>垂直落下。</p>
+    <p>2. 硬幣撞到 <b>雨刷器</b> 後會被撥開，落點由撞擊時機決定。</p>
+    <p>3. 砸中 <b>小火車</b> 會亮燈並播放音效。</p>
+    <p>4. <b>推板</b>把幣推過<b>前緣</b> → 掉進正面收集槽 <b>+1 分</b>。</p>
+    <p>5. 幣被擠到<b>左右兩側</b> → 掉進回收暗洞，<b>銷毀不計分</b>。</p>
+    <p>6. 5 分可按上方「<b>兌換</b>」換成 1 遊戲幣。</p>
+    <p>7. <b>波波</b>掉進正面收集槽 → 抽獎。小 JP 集滿 5 次，下一抽必中<b>大 JP 1000 幣</b>。</p>
+    <p>8. <b>搖機</b>可震動幣堆（每局 10 次，冷卻 3 秒）。</p>
+    <button id="btnRulesClose">知道了</button>
+  </div>
 </div>
 
 <div id="loader">
@@ -418,9 +494,39 @@ const CONFIG = {
   BED_W: 8.0,
   BED_D: 5.0,
   BED_TILT_DEG: 2.5,
-  APRON_DEPTH: 0.8,
+  APRON_DEPTH: 0.5,
   APRON_DEG: 35,
   BACK_WALL_Z: 1.1,
+
+  /* ---- 空間佈局（依指定數值）----
+     底盤 BoxGeometry(12,1,10) 中心 y=0 → 頂面 y=0.5
+     推板 BoxGeometry(11.5,1,4) 中心 y=1 → 站在底盤上，沿 Z 前後滑 */
+  PLATE_Z0: -5.0,           // 底盤後緣
+  PLATE_Z1: 5.00,           // 底盤前緣 = 深坑開口
+  PLATE_W: 12.00,
+  PLATE_TOP_Y: 0.50,        // 底盤頂面高度
+  DROP_Y: 20.0,             // ★ 投幣口最高點（Y = 20）
+  DROP_Z: 0.00,             // 2D 平面：所有硬幣都鎖在這個 Z
+  /* ---- 2.5D 平面釘子迷宮 ----
+     硬幣打直（軸向 Z）並鎖定 Z 位移與 X/Y 旋轉，
+     只能沿 X（左右）/ Y（上下）移動與繞 Z 自轉 = 2D 彈珠物理。
+     迷宮沒有地板，幣從釘子之間一路彈到底，直接落到 Y=0 推盤。 */
+  MAZE_Y_LOW: 9.0,          // 迷宮底（再往下就是空的）
+  MAZE_Y_HIGH: 13.05,       // 迷宮頂（4 層 × 1.35 排距）
+  MAZE_Z: 0.00,             // 平面所在的 Z
+  PEG_R: 0.12,              // 釘子半徑（X-Y 平面內）
+  PEG_LEN: 0.55,            // 釘子長度（沿 Z 朝鏡頭）
+  PEG_ROW_GAP: 1.35,        // 排距（Y）
+  PEG_COL_GAP: 1.00,        // 同排釘距（X）
+  MAZE_HALF_W: 3.40,        // 左右擋板
+  MAZE_WALL_LO: 6.0,
+  MAZE_WALL_HI: 14.5,
+  /* 波波專用管道：不進迷宮，從側邊直落推盤 */
+  BALL_CHUTE_X: 3.00,
+  BALL_CHUTE_Y: 20.0,
+  PEG_RESTITUTION: 0.45,    // 撞釘清脆
+  PEG_FRICTION: 0.12,
+  COIN_DROP_VX: 0.55,       // 落幣時的左右微擾（打破對稱，避免停在釘頂）
 
   /* ---- 硬幣（銀色金屬圓幣） ---- */
   COIN_RADIUS: 0.30,
@@ -450,26 +556,22 @@ const CONFIG = {
   SLEEP_SPEED_LIMIT: 0.5,
   SLEEP_TIME_LIMIT: 0.45,
 
-  /* ---- 投幣滑軌：左右規律巡迴，按一下就在當前位置落幣 ---- */
-  CARRIAGE_Y: 1.78,            // 出幣口高度
-  CARRIAGE_Z: 3.30,            // 出幣口前後位置
-  CARRIAGE_RANGE: 3.05,        // 左右擺幅（±）
-  CARRIAGE_PERIOD: 2.8,        // 一個完整來回（秒）
-  CARRIAGE_RELEASE_VY: -1.2,   // 落幣初速（向下）
-  CARRIAGE_COOLDOWN: 0.10,     // 兩枚幣最小間隔
+  /* ---- 投幣 ---- */
+  DROP_COOLDOWN: 0.09,      // 兩枚幣最小間隔
+  DROP_RELEASE_VY: -0.6,    // 落幣初速（向下）
 
-  PUSHER_W: 7.6,
-  PUSHER_H: 1.2,
-  PUSHER_D: 1.4,
-  PUSHER_Z_MIN: 1.80,
-  PUSHER_STROKE: 1.0,
-  PUSHER_CYCLE: 2.8,
-  PUSHER_FWD_TIME: 0.95,
+  PUSHER_W: 11.5,
+  PUSHER_H: 1.0,
+  PUSHER_D: 4.0,
+  PUSHER_Z_MIN: -3.0,
+  PUSHER_STROKE: 6.0,
+  PUSHER_CYCLE: 4.0,
+  PUSHER_FWD_TIME: 1.20,
   PUSHER_FWD_DWELL: 0.15,
-  PUSHER_BACK_TIME: 1.45,
+  PUSHER_BACK_TIME: 1.80,
   PUSHER_BACK_DWELL: 0.25,
-  PUSHER_MAX_SPEED_FWD: 2.4,
-  PUSHER_MAX_SPEED_BACK: 1.7,
+  PUSHER_MAX_SPEED_FWD: 3.4,
+  PUSHER_MAX_SPEED_BACK: 2.2,
 
   SHAKE_COOLDOWN: 3.0,
   SHAKE_USES_PER_GAME: 10,
@@ -494,7 +596,7 @@ const CONFIG = {
   MAX_BODIES_DESKTOP: 300,
   MAX_BODIES_MOBILE: 180,
   PRELOAD_DESKTOP: 130,
-  PRELOAD_MOBILE: 95,
+  PRELOAD_MOBILE: 110,
   AUTO_FEED_BELOW: 85,       // 台面幣數低於此值 → 幣塔自動補幣
   AUTO_FEED_INTERVAL: 0.45,
   GOLD_MAX: 64,
@@ -530,11 +632,9 @@ const _s1 = new THREE.Vector3(1, 1, 1);
 const _col = new THREE.Color();
 const _ent = new THREE.Object3D();
 
-/* 台面表面高度（前低 2.5° 斜坡；台面中心 z = BED_D/2 處的表面高度為 0） */
-const BED_SLOPE = Math.tan(CONFIG.BED_TILT_DEG * D2R);
-const bedY = (z) => (CONFIG.BED_D / 2 - z) * BED_SLOPE;
-const BED_FRONT_Z = CONFIG.BED_D;
-const BED_FRONT_Y = bedY(BED_FRONT_Z);
+/* 推盤表面高度（平整推盤 = 0） */
+const bedY = () => 0;
+const BED_FRONT_Z = CONFIG.PLATE_Z1;
 
 /* ============================================================
    §3  音效（WebAudio 程序化合成，零外部檔案）
@@ -618,6 +718,22 @@ class Sfx {
     o.start(now); o.stop(now + 0.05);
   }
 
+  /* 軌道紅點「叮」一聲 */
+  ding(pitch = 1) {
+    if (!this.on) return; this.ensure(); if (!this.ctx) return;
+    const now = this.t;
+    const base = 1180 * pitch;
+    [1, 2.76].forEach((mult, i) => {
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(base * mult, now);
+      const g = this.ctx.createGain();
+      this.env(g, now, 0.002, i ? 0.10 : 0.24, i ? 0.05 : 0.11);
+      o.connect(g); g.connect(this.ctx.destination);
+      o.start(now); o.stop(now + 0.32);
+    });
+  }
+
   win(level = 1) {
     if (!this.on) return; this.ensure(); if (!this.ctx) return;
     const now = this.t;
@@ -691,9 +807,29 @@ scene.background = new THREE.Color(0x1a0730);
 scene.fog = new THREE.Fog(0x1a0730, 24, 52);
 
 const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 260);
-const CAM_TARGET = new THREE.Vector3(0, 0.5, 2.9);
-const CAM_BASE = new THREE.Vector3(0, 6.8, 10.4);
+const CAM_TARGET = new THREE.Vector3(0, 6.50, 2.90);
+const CAM_PITCH = 14 * D2R;      // 2.5D：接近正面平視，略微俯視
+const CAM_ORBIT_R = 10.5;
 let camOrbit = 0, camOrbitTarget = 0, camShake = 0;
+let camDist = 12;                // 由 updateCameraFit() 依 aspect 反算
+
+/* --- 依畫面比例反算相機距離 ---
+   直向螢幕的水平視野很窄，若用固定距離，8 單位寬的推盤一定會被切掉。
+   這裡同時算「裝得下寬度」與「裝得下高度」所需距離，取大者。 */
+const CAM_NEED_W = 13.8;         // 需涵蓋的水平寬度（底盤 12）
+const CAM_NEED_H = 28.0;         // 需涵蓋的垂直跨度（投幣口 Y=20 → 深坑 Y=-5）
+function updateCameraFit() {
+  const aspect = innerWidth / Math.max(1, innerHeight);
+  camera.aspect = aspect;
+  /* 直向時拉開 FOV，否則相機要退到 20 單位外，幣會小到看不清 */
+  camera.fov = aspect < 1 ? 62 : 50;
+  camera.updateProjectionMatrix();
+
+  const tanV = Math.tan((camera.fov * D2R) / 2);
+  const distW = (CAM_NEED_W / 2) / (tanV * aspect);
+  const distH = (CAM_NEED_H / 2) / tanV;
+  camDist = Math.max(distW, distH, 9);
+}
 
 scene.add(new THREE.HemisphereLight(0xb794f6, 0x2a0a4a, 1.35));
 
@@ -898,6 +1034,10 @@ const MAT = {
   bed: new CANNON.Material('bed'),
   pusher: new CANNON.Material('pusher'),
   ball: new CANNON.Material('ball'),
+  board: new CANNON.Material('board'),
+  peg: new CANNON.Material('peg'),
+  chute: new CANNON.Material('chute'),
+  plastic: new CANNON.Material('plastic'),
 };
 
 /* 硬幣側摩擦 0.45~0.60、彈性 0.10~0.15（規格硬約束）
@@ -909,6 +1049,15 @@ const MAT = {
   [MAT.coin, MAT.ball, 0.45, 0.15],
   [MAT.ball, MAT.bed, 0.35, 0.14],
   [MAT.ball, MAT.pusher, 0.35, 0.14],
+  [MAT.coin, MAT.plastic, 0.55, 0.20],
+  /* 釘子迷宮：釘子要彈（撞擊清脆）。迷宮沒有地板，所以不需要板面材質 */
+  [MAT.coin, MAT.peg, CONFIG.PEG_FRICTION, CONFIG.PEG_RESTITUTION],
+  [MAT.ball, MAT.peg, 0.10, 0.55],
+  [MAT.coin, MAT.board, 0.30, 0.20],
+  [MAT.ball, MAT.board, 0.25, 0.30],
+  /* 波波管道內壁：摩擦壓到接近 0，才滑得順 */
+  [MAT.ball, MAT.chute, 0.02, 0.30],
+  [MAT.coin, MAT.chute, 0.05, 0.20],
 ].forEach(([a, b, f, r]) => {
   world.addContactMaterial(new CANNON.ContactMaterial(a, b, { friction: f, restitution: r }));
 });
@@ -923,9 +1072,9 @@ const APRON_END_Z = BED_FRONT_Z + CONFIG.APRON_DEPTH;
 const stage = new THREE.Group();
 scene.add(stage);
 
-function addStatic(mesh, shapes, pos, quat) {
+function addStatic(mesh, shapes, pos, quat, mat) {
   if (mesh) stage.add(mesh);
-  const body = new CANNON.Body({ mass: 0, material: MAT.bed });
+  const body = new CANNON.Body({ mass: 0, material: mat || MAT.bed });
   shapes.forEach((s) => body.addShape(s));
   body.position.copy(pos);
   if (quat) body.quaternion.copy(quat);
@@ -933,259 +1082,366 @@ function addStatic(mesh, shapes, pos, quat) {
   return body;
 }
 
-/* --- 台面 --- */
+/* ============================================================
+   §7b  火車推銀機佈局
+   正上方投幣 → 雨刷器（左右擺動）→ 小火車 → 平緩推盤 → 推板 → 邊緣
+   ============================================================ */
+const PLATE_D = CONFIG.PLATE_Z1 - CONFIG.PLATE_Z0;
+const PLATE_MID_Z = (CONFIG.PLATE_Z0 + CONFIG.PLATE_Z1) / 2;
+
+/* --- 固定紫色底盤（Floor，不動）＋ 兩側封閉牆 --- */
 {
+  /* 紫色固定底盤：厚 1 的實體方塊（不是薄片），永遠不動 */
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(CONFIG.BED_W, 0.4, CONFIG.BED_D),
-    new THREE.MeshStandardMaterial({ map: TEX_FLOOR, roughness: 0.62, metalness: 0.12, color: 0xbfa6ff })
+    new THREE.BoxGeometry(CONFIG.PLATE_W, 1.0, PLATE_D),
+    new THREE.MeshStandardMaterial({
+      map: TEX_FLOOR, roughness: 0.55, metalness: 0.22,
+      color: 0x9d7bff, emissive: 0x2a0a4a, emissiveIntensity: 0.5,
+    })
   );
-  mesh.position.set(0, -0.2, CONFIG.BED_D / 2);
-  mesh.rotation.x = CONFIG.BED_TILT_DEG * D2R;
+  mesh.position.set(0, -0.5, PLATE_MID_Z);
   mesh.receiveShadow = true;
+  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(CONFIG.PLATE_W / 2, 0.5, PLATE_D / 2))],
+    new CANNON.Vec3(0, -0.5, PLATE_MID_Z), null);
 
-  const q = new CANNON.Quaternion();
-  q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), CONFIG.BED_TILT_DEG * D2R);
-  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(CONFIG.BED_W / 2, 0.2, CONFIG.BED_D / 2))],
-    new CANNON.Vec3(0, -0.2, CONFIG.BED_D / 2), q);
+  /* 兩側封閉牆（高 5，防止硬幣從側面飛出宇宙），只有正前方開放 */
+  for (const s of [-1, 1]) {
+    const wm = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 5.0, PLATE_D + 0.4),
+      new THREE.MeshStandardMaterial({
+        color: 0x7c3aed, emissive: 0x8b5cf6, emissiveIntensity: 0.6,
+        roughness: 0.35, metalness: 0.55, transparent: true, opacity: 0.55,
+      })
+    );
+    wm.position.set(s * (CONFIG.PLATE_W / 2 + 0.08), 2.5, PLATE_MID_Z);
+    stage.add(wm);
+    addStatic(null, [new CANNON.Box(new CANNON.Vec3(0.08, 2.5, (PLATE_D + 0.4) / 2))],
+      new CANNON.Vec3(wm.position.x, wm.position.y, PLATE_MID_Z), null, MAT.board);
+  }
 }
 
-/* --- 前緣結算坡 35° --- */
-{
-  const ang = CONFIG.APRON_DEG * D2R;
-  const slopeLen = CONFIG.APRON_DEPTH / Math.cos(ang);
-  const topMidY = BED_FRONT_Y - Math.sin(ang) * slopeLen / 2;
-  const topMidZ = BED_FRONT_Z + CONFIG.APRON_DEPTH / 2;
-  const nY = Math.cos(ang), nZ = Math.sin(ang);
-  const cx = 0, cy = topMidY - nY * 0.1, cz = topMidZ - nZ * 0.1;
-
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(CONFIG.BED_W, 0.2, slopeLen),
-    new THREE.MeshStandardMaterial({ color: 0x551a8b, roughness: 0.3, metalness: 0.5 })
-  );
-  mesh.position.set(cx, cy, cz);
-  mesh.rotation.x = ang;
-
-  const q = new CANNON.Quaternion();
-  q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), ang);
-  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(CONFIG.BED_W / 2, 0.1, slopeLen / 2))],
-    new CANNON.Vec3(cx, cy, cz), q);
-}
-
-/* --- 後牆 --- */
+/* --- 後牆（推板後退極限後面） --- */
 {
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(CONFIG.BED_W, 1.4, 0.3),
+    new THREE.BoxGeometry(CONFIG.PLATE_W, 1.5, 0.3),
     new THREE.MeshStandardMaterial({ color: 0x5b21b6, roughness: 0.45, metalness: 0.25 })
   );
-  mesh.position.set(0, 0.35, CONFIG.BACK_WALL_Z - 0.15);
-  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(CONFIG.BED_W / 2, 0.7, 0.15))],
-    new CANNON.Vec3(0, 0.35, CONFIG.BACK_WALL_Z - 0.15), null);
+  mesh.position.set(0, 0.45, CONFIG.PLATE_Z0 - 0.15);
+  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(CONFIG.PLATE_W / 2, 0.75, 0.15))],
+    new CANNON.Vec3(0, 0.45, CONFIG.PLATE_Z0 - 0.15), null);
 }
 
-/* --- 左右低圍欄（0.45 高，配合 Q8-B「任何邊緣都算分」） --- */
-for (const s of [-1, 1]) {
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 0.75, CONFIG.BED_D + 0.4),
-    new THREE.MeshStandardMaterial({
-      map: stripeTexture('#f472b6', '#fde68a', 20), roughness: 0.35, metalness: 0.15
-    })
-  );
-  mesh.position.set(s * (CONFIG.BED_W / 2), 0.075, CONFIG.BED_D / 2);
-  mesh.rotation.x = CONFIG.BED_TILT_DEG * D2R;
-  mesh.receiveShadow = true;
-
-  const q = new CANNON.Quaternion();
-  q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), CONFIG.BED_TILT_DEG * D2R);
-  addStatic(mesh, [new CANNON.Box(new CANNON.Vec3(0.12, 0.375, (CONFIG.BED_D + 0.4) / 2))],
-    new CANNON.Vec3(s * (CONFIG.BED_W / 2), 0.075, CONFIG.BED_D / 2), q);
-}
-
-/* --- 塔基平台 --- */
+/* --- 正面收集槽（推板把幣推過前緣就掉進來 = 加分） --- */
 {
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(6.4, 1.0, 5.2),
-    new THREE.MeshStandardMaterial({ color: 0x3b1263, roughness: 0.8, metalness: 0.1 })
-  );
-  mesh.position.set(0, -0.5, -2.6);
-  stage.add(mesh);
-}
-
-/* --- 中央糖果幣塔 --- */
-let towerGlowSprite = null;
-{
-  const towerGroup = new THREE.Group();
-  towerGroup.position.set(0, 0, -1.6);
-  scene.add(towerGroup);
-
-  const stripe = stripeTexture('#c084fc', '#ffffff', 12);
-  stripe.repeat.set(3, 2);
-  const shaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.1, 1.1, 5.6, 24),
-    new THREE.MeshStandardMaterial({ map: stripe, roughness: 0.32, metalness: 0.22 })
-  );
-  shaft.position.y = 2.8;
-  shaft.castShadow = !IS_MOBILE;
-  towerGroup.add(shaft);
-
-  const capMat = new THREE.MeshStandardMaterial({
-    color: 0xf472b6, roughness: 0.2, metalness: 0.35,
-    emissive: 0x831843, emissiveIntensity: 0.4
+  const binMat = new THREE.MeshStandardMaterial({
+    color: 0x120524, roughness: 0.6, metalness: 0.4,
+    emissive: 0x2a0a4a, emissiveIntensity: 0.8,
   });
-  const cap = new THREE.Mesh(
-    new THREE.SphereGeometry(1.16, 22, 14, 0, Math.PI * 2, 0, Math.PI / 2), capMat
+  const add = (w, h, d, x, y, z) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), binMat);
+    m.position.set(x, y, z);
+    stage.add(m);
+  };
+  add(CONFIG.PLATE_W, 0.12, 1.0, 0, -2.20, CONFIG.PLATE_Z1 + 0.5);   // 槽底
+  add(CONFIG.PLATE_W, 0.9, 0.12, 0, -1.80, CONFIG.PLATE_Z1 + 1.0);   // 槽後壁
+  add(0.12, 0.9, 1.0, -3.95, -1.80, CONFIG.PLATE_Z1 + 0.5);
+  add(0.12, 0.9, 1.0, 3.95, -1.80, CONFIG.PLATE_Z1 + 0.5);
+
+  /* 前緣發光唇條，讓「這條線掉下去就得分」一眼可辨 */
+  const lip = new THREE.Mesh(
+    new THREE.BoxGeometry(CONFIG.PLATE_W, 0.06, 0.1),
+    new THREE.MeshBasicMaterial({ color: 0xffd54a, transparent: true, opacity: 0.85 })
   );
-  cap.position.y = 5.6;
-  cap.castShadow = !IS_MOBILE;
-  towerGroup.add(cap);
+  lip.position.set(0, 0.02, CONFIG.PLATE_Z1 + 0.03);
+  stage.add(lip);
 
-  const collar = new THREE.Mesh(new THREE.TorusGeometry(1.22, 0.09, 8, 32), capMat);
-  collar.position.y = 0.1;
-  collar.rotation.x = Math.PI / 2;
-  towerGroup.add(collar);
-
-  towerGlowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: TEX_GLOW, color: 0xffd54a, transparent: true, opacity: 0.75,
-    blending: THREE.AdditiveBlending, depthWrite: false
+  const gl = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: TEX_GLOW, color: 0xffd54a, transparent: true, opacity: 0.45,
+    blending: THREE.AdditiveBlending, depthWrite: false,
   }));
-  towerGlowSprite.scale.set(5, 5, 1);
-  towerGlowSprite.position.y = 5.9;
-  towerGroup.add(towerGlowSprite);
+  gl.scale.set(7.5, 2.0, 1);
+  gl.position.set(0, -1.4, CONFIG.PLATE_Z1 + 0.6);
+  scene.add(gl);
+}
 
-  /* 底部光環 */
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(4.6, 5.2, 48),
-    new THREE.MeshBasicMaterial({
-      color: 0x8b5cf6, transparent: true, opacity: 0.22,
-      side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false
-    })
-  );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.set(0, -1.0, 2.6);
-  scene.add(ring);
+/* --- 左右回收暗洞（幣被推擠到兩側 = 銷毀） --- */
+{
+  const holeMat = new THREE.MeshStandardMaterial({
+    color: 0x0a0114, roughness: 0.9, metalness: 0.2,
+    emissive: 0x150326, emissiveIntensity: 0.6,
+  });
+  for (const s of [-1, 1]) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.55, PLATE_D), holeMat);
+    m.position.set(s * (CONFIG.PLATE_W / 2 + 0.5), -0.30, PLATE_MID_Z);
+    stage.add(m);
+
+    const rim = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.05, PLATE_D),
+      new THREE.MeshBasicMaterial({ color: 0xff4466, transparent: true, opacity: 0.5 })
+    );
+    rim.position.set(s * (CONFIG.PLATE_W / 2 + 0.02), 0.02, PLATE_MID_Z);
+    stage.add(rim);
+  }
 }
 
 /* ============================================================
-   §8  投幣滑軌 —— 左右規律巡迴的單一投幣口
-   玩家按一下，就在滑軌「當前位置」落幣 → 落點是時機問題，不是選擇問題
+   §7c  2.5D 平面釘子迷宮（Plinko）
+   Y=20 投幣口（X 固定 0）→ 平面釘陣 Y=9~15.5 → Y=0 推盤
+   硬幣鎖在 z = MAZE_Z，只做 X-Y 平面運動
    ============================================================ */
-const CARRIAGE = { x: 0, t: 0, cooldown: 0, group: null, beam: null, ring: null };
+const DROP = { x: 0, y: CONFIG.DROP_Y, z: CONFIG.MAZE_Z };
+const MAZE_MID_Y = (CONFIG.MAZE_Y_LOW + CONFIG.MAZE_Y_HIGH) / 2;
 
-(function buildCarriage() {
-  const railY = 2.64;
-  const z = CONFIG.CARRIAGE_Z;
-
-  /* 水平軌道 */
-  const rail = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, CONFIG.CARRIAGE_RANGE * 2 + 0.8, 10),
-    new THREE.MeshStandardMaterial({ color: 0xd8c8ff, roughness: 0.22, metalness: 0.9 })
-  );
-  rail.rotation.z = Math.PI / 2;
-  rail.position.set(0, railY, z);
-  scene.add(rail);
-
-  for (const s of [-1, 1]) {
-    const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.13, 12, 10),
-      new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.3, metalness: 0.6 })
-    );
-    cap.position.set(s * (CONFIG.CARRIAGE_RANGE + 0.4), railY, z);
-    scene.add(cap);
-  }
-
-  const g = new THREE.Group();
-  g.position.set(0, 0, z);
-  scene.add(g);
-
-  /* 吊臂 */
-  const stem = new THREE.Mesh(
-    new THREE.BoxGeometry(0.16, 0.46, 0.16),
-    new THREE.MeshStandardMaterial({ color: 0xb794f6, roughness: 0.28, metalness: 0.85 })
-  );
-  stem.position.set(0, railY - 0.26, 0);
-  g.add(stem);
-
-  /* 糖果漏斗（出幣口） */
-  const funnel = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.56, 0.24, 0.55, 18, 1, true),
-    new THREE.MeshStandardMaterial({
-      color: 0xf472b6, roughness: 0.18, metalness: 0.8, side: THREE.DoubleSide,
-      emissive: 0x5b0f2e, emissiveIntensity: 0.5
-    })
-  );
-  funnel.position.set(0, CONFIG.CARRIAGE_Y + 0.30, 0);
-  g.add(funnel);
-
-  const gl = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: TEX_GLOW, color: 0xffb3e6, transparent: true, opacity: 0.6,
-    blending: THREE.AdditiveBlending, depthWrite: false
-  }));
-  gl.scale.set(1.5, 1.5, 1);
-  gl.position.set(0, CONFIG.CARRIAGE_Y + 0.06, 0);
-  g.add(gl);
-
-  /* 落點光柱 */
-  const beamH = CONFIG.CARRIAGE_Y - bedY(z);
-  const beam = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.26, beamH, 12, 1, true),
-    new THREE.MeshBasicMaterial({
-      color: 0xffd54a, transparent: true, opacity: 0.14,
-      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
-    })
-  );
-  beam.position.set(0, CONFIG.CARRIAGE_Y - beamH / 2, 0);
-  g.add(beam);
-
-  /* 地面落點標記 */
+/* --- 投幣口（固定 X = 0） --- */
+{
   const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.20, 0.34, 26),
-    new THREE.MeshBasicMaterial({
-      color: 0xffd54a, transparent: true, opacity: 0.7,
-      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+    new THREE.TorusGeometry(0.34, 0.05, 8, 26),
+    new THREE.MeshStandardMaterial({
+      color: 0x8b5cf6, emissive: 0xc084fc, emissiveIntensity: 1.8,
+      roughness: 0.22, metalness: 0.6,
     })
   );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.set(0, bedY(z) + 0.02, 0);
-  g.add(ring);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.set(0, DROP.y, DROP.z);
+  scene.add(ring);
 
-  CARRIAGE.group = g;
-  CARRIAGE.beam = beam;
-  CARRIAGE.ring = ring;
-})();
-
-function updateCarriage(dt) {
-  CARRIAGE.t += dt;
-  CARRIAGE.x = Math.sin((CARRIAGE.t / CONFIG.CARRIAGE_PERIOD) * Math.PI * 2)
-    * CONFIG.CARRIAGE_RANGE;
-  CARRIAGE.group.position.x = CARRIAGE.x;
-  CARRIAGE.cooldown = Math.max(0, CARRIAGE.cooldown - dt);
-
-  const pulse = 0.5 + 0.5 * Math.sin(CARRIAGE.t * 6);
-  CARRIAGE.ring.material.opacity = 0.42 + pulse * 0.38;
-  CARRIAGE.beam.material.opacity = 0.09 + pulse * 0.07;
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.16, 0.8, 12, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: 0xc084fc, transparent: true, opacity: 0.22,
+      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+    })
+  );
+  beam.position.set(0, DROP.y - 0.35, DROP.z);
+  scene.add(beam);
 }
 
-/* --- 空中提示：波波掉落口 --- */
+/* --- 背景板（微微向前傾斜）＋ 左右擋板 --- */
 {
-  const hoop = new THREE.Mesh(
-    new THREE.TorusGeometry(0.6, 0.06, 8, 24),
+  const boardH = CONFIG.MAZE_WALL_HI - CONFIG.MAZE_WALL_LO + 2;
+  const boardCY = (CONFIG.MAZE_WALL_HI + CONFIG.MAZE_WALL_LO) / 2;
+
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(CONFIG.MAZE_HALF_W * 2 + 0.6, boardH, 0.22),
     new THREE.MeshStandardMaterial({
-      color: 0xffd54a, emissive: 0xffa000, emissiveIntensity: 0.9,
-      roughness: 0.2, metalness: 0.6
+      map: TEX_FLOOR, color: 0x3b1263, roughness: 0.7, metalness: 0.35,
+      emissive: 0x1b0535, emissiveIntensity: 0.8,
     })
   );
-  hoop.position.set(0, 3.9, 3.0);
-  hoop.rotation.x = Math.PI / 2;
-  scene.add(hoop);
+  back.position.set(0, boardCY, CONFIG.MAZE_Z - 0.42);
+  back.rotation.x = -6 * D2R;
+  back.receiveShadow = !IS_MOBILE;
+  stage.add(back);
+  addStatic(null, [new CANNON.Box(new CANNON.Vec3(
+    CONFIG.MAZE_HALF_W + 0.3, boardH / 2, 0.11
+  ))], new CANNON.Vec3(0, boardCY, CONFIG.MAZE_Z - 0.42), null, MAT.board);
+
+  const wallH = CONFIG.MAZE_WALL_HI - CONFIG.MAZE_WALL_LO;
+  const wallCY = (CONFIG.MAZE_WALL_HI + CONFIG.MAZE_WALL_LO) / 2;
+  for (const s of [-1, 1]) {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, wallH, 0.7),
+      new THREE.MeshStandardMaterial({
+        color: 0x7c3aed, emissive: 0x8b5cf6, emissiveIntensity: 0.9,
+        roughness: 0.3, metalness: 0.5, transparent: true, opacity: 0.75,
+      })
+    );
+    m.position.set(s * (CONFIG.MAZE_HALF_W + 0.08), wallCY, CONFIG.MAZE_Z);
+    stage.add(m);
+    addStatic(null, [new CANNON.Box(new CANNON.Vec3(0.08, wallH / 2, 0.35))],
+      new CANNON.Vec3(m.position.x, m.position.y, m.position.z), null, MAT.board);
+  }
+}
+
+/* --- 波波專用垂直管道（不進迷宮，從側邊直落推盤） --- */
+{
+  const cx = CONFIG.BALL_CHUTE_X;
+  const top = CONFIG.BALL_CHUTE_Y;
+  const bottom = CONFIG.MAZE_WALL_LO - 0.5;
+  const h = top - bottom;
+
+  const tube = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.62, 0.62, h, 16, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0xf472b6, emissive: 0xff4fa3, emissiveIntensity: 0.9,
+      roughness: 0.2, metalness: 0.55,
+      transparent: true, opacity: 0.42, side: THREE.DoubleSide,
+    })
+  );
+  tube.position.set(cx, bottom + h / 2, CONFIG.MAZE_Z);
+  scene.add(tube);
+
+  for (const yy of [top - 0.1, bottom + 0.1]) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.64, 0.04, 8, 20),
+      new THREE.MeshStandardMaterial({
+        color: 0xff9ce0, emissive: 0xff4fa3, emissiveIntensity: 1.5,
+        roughness: 0.2, metalness: 0.4,
+      })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(cx, yy, CONFIG.MAZE_Z);
+    scene.add(ring);
+  }
+
+  /* 真實碰撞牆（內寬 1.5，波波直徑 0.64，摩擦 0.02 → 「咻」一聲滑落）。
+     只在迷宮底下（Y 3.5~8.0）設置，避免擋住迷宮裡左右彈跳的硬幣。 */
+  const wallLo = 3.5, wallHi = CONFIG.MAZE_Y_LOW - 1.0;
+  const wallH = wallHi - wallLo;
+  const wallCY = (wallHi + wallLo) / 2;
+  for (const s of [-1, 1]) {
+    const wm = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, wallH, 0.62),
+      new THREE.MeshStandardMaterial({
+        color: 0xff9ce0, emissive: 0xff4fa3, emissiveIntensity: 0.8,
+        roughness: 0.25, metalness: 0.4, transparent: true, opacity: 0.8,
+      })
+    );
+    wm.position.set(cx + s * 0.75, wallCY, CONFIG.MAZE_Z);
+    stage.add(wm);
+    addStatic(null, [new CANNON.Box(new CANNON.Vec3(0.05, wallH / 2, 0.31))],
+      new CANNON.Vec3(wm.position.x, wallCY, CONFIG.MAZE_Z), null, MAT.chute);
+  }
+}
+
+/* --- 平面釘子陣（交錯排列，軸向 Z 朝鏡頭） --- */
+const MAZE_PEGS = [];
+{
+  const R = CONFIG.PEG_R;
+  const LEN = CONFIG.PEG_LEN;
+  const rowGap = CONFIG.PEG_ROW_GAP;
+  const colGap = CONFIG.PEG_COL_GAP;
+  const nRows = Math.round((CONFIG.MAZE_Y_HIGH - CONFIG.MAZE_Y_LOW) / rowGap) + 1;
+
+  const shapeQ = new CANNON.Quaternion();
+  shapeQ.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2);
+  const axisFix = (() => {
+    const probe = new CANNON.Cylinder(R, R, LEN, 6);
+    let my = 0, mz = 0;
+    for (const v of probe.vertices) {
+      my = Math.max(my, Math.abs(v.y));
+      mz = Math.max(mz, Math.abs(v.z));
+    }
+    if (my <= mz) return null;
+    const q = new CANNON.Quaternion();
+    q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+    return q;
+  })();
+  if (axisFix) shapeQ.mult(axisFix, shapeQ);
+
+  const pegShape = new CANNON.Cylinder(R, R, LEN, 10);
+  const pegGeo = new THREE.CylinderGeometry(R, R, LEN, 14);
+  const pegMat = new THREE.MeshStandardMaterial({
+    color: 0xf0e2ff,
+    emissive: 0xc084fc,
+    emissiveIntensity: 1.6,
+    roughness: 0.12,
+    metalness: 0.4,
+  });
+
+  for (let r = 0; r < nRows; r++) {
+    const y = CONFIG.MAZE_Y_LOW + r * rowGap;
+    /* 交錯排列（照規格）：偶數排 X = -2, 0, 2；奇數排 X = -1, 1 */
+    const xs = (r % 2 === 0) ? [-2, 0, 2] : [-1, 1];
+    for (let k = 0; k < xs.length; k++) {
+      const x = xs[k];
+      if (Math.abs(x) > CONFIG.MAZE_HALF_W - R) continue;
+
+      const body = new CANNON.Body({ mass: 0, material: MAT.peg });
+      body.addShape(pegShape, new CANNON.Vec3(0, 0, 0), shapeQ);
+      body.position.set(x, y, CONFIG.MAZE_Z);
+      world.addBody(body);
+
+      const mesh = new THREE.Mesh(pegGeo, pegMat);
+      mesh.position.set(x, y, CONFIG.MAZE_Z);
+      mesh.rotation.x = Math.PI / 2;
+      mesh.castShadow = !IS_MOBILE;
+      stage.add(mesh);
+
+      MAZE_PEGS.push({ x, y, mesh, body });
+    }
+  }
+}
+
+/* --- 2D 鎖軸：迷宮內只准 X-Y 平面運動 --- */
+function lock2D() {
+  for (let i = 0; i < entities.length; i++) {
+    const e = entities[i];
+    if (e.free3d) continue;
+    const b = e.body;
+    if (b.position.y > CONFIG.MAZE_Y_LOW - 1.0) {
+      b.position.z = CONFIG.MAZE_Z;
+      b.velocity.z = 0;
+      b.angularVelocity.x = 0;
+      b.angularVelocity.y = 0;
+      /* 只歸零角速度不夠：求解器在 step 內部已把 X/Y 分量轉進 quaternion，
+         這裡把四元數投影回「只繞 Z 自轉」 */
+      const q = b.quaternion;
+      const qlen = Math.sqrt(q.z * q.z + q.w * q.w);
+      if (qlen > 1e-6) {
+        q.x = 0; q.y = 0;
+        q.z /= qlen; q.w /= qlen;
+      } else {
+        q.x = 0; q.y = 0; q.z = 0; q.w = 1;
+      }
+      if (b.position.x < -CONFIG.MAZE_HALF_W + 0.3) {
+        b.position.x = -CONFIG.MAZE_HALF_W + 0.3;
+        if (b.velocity.x < 0) b.velocity.x = 0;
+      } else if (b.position.x > CONFIG.MAZE_HALF_W - 0.3) {
+        b.position.x = CONFIG.MAZE_HALF_W - 0.3;
+        if (b.velocity.x > 0) b.velocity.x = 0;
+      }
+    } else {
+      e.free3d = true;   // 離開迷宮 → 放開，讓它在推盤上自然躺平
+    }
+  }
+}
+
+/* 迷宮卡幣救援 */
+function unstickBoard(dt) {
+  if (settling) return;
+  for (let i = 0; i < entities.length; i++) {
+    const e = entities[i];
+    if (!e.alive || e.scored || e.free3d) continue;
+    const p = e.body.position;
+    if (p.y < CONFIG.MAZE_Y_LOW - 1.0 || p.y > CONFIG.MAZE_Y_HIGH + 1.5) continue;
+
+    if (e.body.velocity.lengthSquared() < 0.30) {
+      e.stuckT = (e.stuckT || 0) + dt;
+      if (e.stuckT > 1.2) {
+        e.stuckT = 0;
+        e.body.wakeUp();
+        e.body.velocity.x += rand(-1.6, 1.6);
+        e.body.velocity.y -= 1.2;
+      }
+    } else {
+      e.stuckT = 0;
+    }
+  }
+}
+
+/* 終端速度限制 */
+const MAX_SPEED = 26;
+function clampSpeeds() {
+  for (let i = 0; i < entities.length; i++) {
+    const v = entities[i].body.velocity;
+    const s2 = v.lengthSquared();
+    if (s2 > MAX_SPEED * MAX_SPEED) {
+      const k = MAX_SPEED / Math.sqrt(s2);
+      v.x *= k; v.y *= k; v.z *= k;
+    }
+  }
 }
 
 /* ============================================================
    §9  實例池
    ============================================================ */
 class InstancePool {
-  constructor(geometry, material, max, name) {
+  constructor(geometry, material, max, name, baseQuat) {
     this.max = max;
     this.name = name;
     this.list = [];
+    this.baseQuat = baseQuat || null;   // 2.5D：硬幣要額外打直 90°
     this.mesh = new THREE.InstancedMesh(geometry, material, max);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.mesh.count = 0;
@@ -1238,6 +1494,7 @@ class InstancePool {
       const b = arr[i].body;
       _v3.set(b.position.x, b.position.y, b.position.z);
       _q.set(b.quaternion.x, b.quaternion.y, b.quaternion.z, b.quaternion.w);
+      if (this.baseQuat) _q.multiply(this.baseQuat);
       _m4.compose(_v3, _q, _s1);
       mesh.setMatrixAt(i, _m4);
     }
@@ -1321,6 +1578,9 @@ function coinFaceTexture(tintLight, tintMid, tintDark) {
 const SILVER_TEX = coinFaceTexture('#f4f7fb', '#c3cad6', '#98a1b0');
 const GOLD_TEX = coinFaceTexture('#fff2b8', '#e0a92e', '#a97a14');
 
+/* 2.5D：硬幣 Mesh 也要打直 90°（軸向 Z），與物理形狀一致 */
+const COIN_BASE_Q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+
 const coinPool = new InstancePool(
   COIN_GEO,
   new THREE.MeshStandardMaterial({
@@ -1329,7 +1589,7 @@ const coinPool = new InstancePool(
     metalness: 0.92,
     roughness: 0.26,
   }),
-  MAX_BODIES, 'coin'
+  MAX_BODIES, 'coin', COIN_BASE_Q
 );
 const goldPool = new InstancePool(
   COIN_GEO,
@@ -1341,7 +1601,7 @@ const goldPool = new InstancePool(
     emissive: 0x6b3d00,
     emissiveIntensity: 0.35,
   }),
-  CONFIG.GOLD_MAX, 'gold'
+  CONFIG.GOLD_MAX, 'gold', COIN_BASE_Q
 );
 const ballPool = new InstancePool(
   BALL_GEO,
@@ -1391,7 +1651,7 @@ function createEntity(kind) {
   const body = new CANNON.Body({
     mass: isBall ? CONFIG.BALL_MASS : CONFIG.COIN_MASS,
     material: isBall ? MAT.ball : MAT.coin,
-    linearDamping: isBall ? 0.10 : 0.02,
+    linearDamping: isBall ? 0.02 : 0.02,
     angularDamping: isBall ? 0.10 : 0.05,
     allowSleep: true,
   });
@@ -1399,13 +1659,15 @@ function createEntity(kind) {
   body.sleepTimeLimit = CONFIG.SLEEP_TIME_LIMIT;
   if (isBall) {
     body.addShape(BALL_SHAPE);
-  } else if (CYL_AXIS_FIX) {
-    body.addShape(COIN_SHAPE, new CANNON.Vec3(0, 0, 0), CYL_AXIS_FIX);
-    body.updateMassProperties();
   } else {
-    body.addShape(COIN_SHAPE);
+    /* 2.5D：把圓柱形狀軸向轉到 Z（硬幣打直，像車輪面對玩家） */
+    const q = new CANNON.Quaternion();
+    q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2);
+    if (CYL_AXIS_FIX) q.mult(CYL_AXIS_FIX, q);
+    body.addShape(COIN_SHAPE, new CANNON.Vec3(0, 0, 0), q);
+    body.updateMassProperties();
   }
-  const ent = { kind, body, slot: -1, scored: false, alive: false };
+  const ent = { kind, body, slot: -1, scored: false, alive: false, free3d: false };
   body.__ent = ent;
   return ent;
 }
@@ -1414,6 +1676,8 @@ function acquire(kind) {
   const e = freelist[kind].pop() || createEntity(kind);
   e.scored = false;
   e.alive = true;
+  e.free3d = false;
+  e.stuckT = 0;
   return e;
 }
 
@@ -1464,7 +1728,7 @@ function spawnBall(x, y, z) {
   const b = e.body;
   b.position.set(x, y, z);
   b.quaternion.set(0, 0, 0, 1);
-  b.velocity.set(rand(-0.3, 0.3), -0.5, rand(-0.3, 0.3));
+  b.velocity.set(rand(-0.2, 0.2), -5.0, 0);
   b.angularVelocity.set(rand(-1, 1), rand(-1, 1), rand(-1, 1));
   b.force.set(0, 0, 0);
   b.torque.set(0, 0, 0);
@@ -1505,11 +1769,12 @@ const pusher = (() => {
   const stripe = stripeTexture('#f472b6', '#fde68a', 20);
   stripe.repeat.set(10, 1);
 
+  /* 粉紅色長方體推板：像抽屜一樣在紫色底盤上前後滑動 */
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(CONFIG.PUSHER_W, CONFIG.PUSHER_H, CONFIG.PUSHER_D),
     new THREE.MeshStandardMaterial({
-      map: stripe, roughness: 0.28, metalness: 0.42,
-      emissive: 0x3b1263, emissiveIntensity: 0.5
+      color: 0xff5fa2, emissive: 0x8b1e5a, emissiveIntensity: 0.55,
+      roughness: 0.30, metalness: 0.35,
     })
   );
   mesh.castShadow = !IS_MOBILE;
@@ -1528,6 +1793,42 @@ const pusher = (() => {
   mesh.position.copy(body.position);
 
   return { mesh, body, t: CONFIG.PUSHER_CYCLE * 0.55, fast: false };
+})();
+
+/* ============================================================
+   §12b  擋幣蓋 (Overhang)
+   固定在推板正上方，前緣對齊底盤前緣 (z = +5)。
+   與推板頂面的縫隙 = 0.15（約 2 枚幣厚），
+   疊太高的幣會被蓋子擋住推回去，只有底層的幣能被擠出前緣跌落。
+   ============================================================ */
+const OVERHANG = (() => {
+  const pusherTopY = -0.05 + CONFIG.PUSHER_H;      // 推板頂面 y = 0.95
+  const gap = 0.15;                                 // ≈ 2 × 幣厚 0.08
+  const thick = 0.60;                               // 蓋子厚度
+  const depth = CONFIG.PUSHER_D * 0.5;              // 推板長度的一半 = 2.0
+  const width = CONFIG.PUSHER_W;                    // 與推板同寬 = 11.5
+  const frontZ = CONFIG.PLATE_Z1;                   // 前緣對齊底盤最前緣 = 5
+  const centerZ = frontZ - depth / 2;               // = 4.0
+  const centerY = pusherTopY + gap + thick / 2;     // = 0.95 + 0.15 + 0.30 = 1.40
+
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(width, thick, depth),
+    new THREE.MeshStandardMaterial({
+      color: 0x4c1d95, emissive: 0x8b5cf6, emissiveIntensity: 0.7,
+      roughness: 0.30, metalness: 0.6,
+      transparent: true, opacity: 0.75,
+    })
+  );
+  mesh.position.set(0, centerY, centerZ);
+  mesh.castShadow = !IS_MOBILE;
+  stage.add(mesh);
+
+  const body = new CANNON.Body({ mass: 0, material: MAT.board });
+  body.addShape(new CANNON.Box(new CANNON.Vec3(width / 2, thick / 2, depth / 2)));
+  body.position.set(0, centerY, centerZ);
+  world.addBody(body);
+
+  return { mesh, body, gap, centerY, centerZ, depth };
 })();
 
 function easeInOut(x) {
@@ -1581,26 +1882,27 @@ function dropCoin() {
     sfx.click();
     return;
   }
-  if (CARRIAGE.cooldown > 0) return;
-  CARRIAGE.cooldown = CONFIG.CARRIAGE_COOLDOWN;
+  if (state.dropCd > 0) return;
+  state.dropCd = CONFIG.DROP_COOLDOWN;
 
   state.wallet--;
   state.coinsInserted++;
   if (state.coinsInserted % CONFIG.BALL_EVERY_N_COINS === 0) ballPending++;
 
   /* 角度抖動 ±0.3°：讓落點不會完全固定（COIN_ANGLE_JITTER） */
-  const yawJitter = rand(-1, 1) * CONFIG.COIN_ANGLE_JITTER_DEG * D2R;
+
+  const vx = rand(-CONFIG.COIN_DROP_VX, CONFIG.COIN_DROP_VX);
 
   enforceBodyCap();
   spawnCoin(
     'coin',
-    CARRIAGE.x + rand(-0.03, 0.03),
-    CONFIG.CARRIAGE_Y,
-    CONFIG.CARRIAGE_Z,
-    Math.sin(yawJitter) * 0.6,
-    CONFIG.CARRIAGE_RELEASE_VY,
-    -0.35,
-    rand(0, Math.PI * 2)
+    DROP.x,
+    DROP.y,
+    DROP.z,
+    vx,
+    CONFIG.DROP_RELEASE_VY,
+    0,
+    0
   );
 
   sfx.ensure();
@@ -1611,19 +1913,20 @@ function dropCoin() {
 }
 
 /* ============================================================
-   §14  判定區（Sensor + 幾何備援）
+   §14  結算判定（收集槽 Sensor + 幾何備援）
    ============================================================ */
 let settling = true;
-const SLOT_Y = -0.62;
 
 /* cannon-es 會在 world.step() 內部派發 collide 事件，
    此時若 addBody / removeBody 會弄壞求解迭代 → 一律延後到 step 之後處理 */
 const pendingResolve = [];
 
+/* 收集槽口的隱形 Sensor（規格要求的 Trigger；位置必須在軌道終點之後，
+   否則軌道上的幣會被提前結算） */
 const sensorBody = (() => {
   const b = new CANNON.Body({ mass: 0 });
-  b.addShape(new CANNON.Box(new CANNON.Vec3(CONFIG.BED_W / 2 + 0.6, 0.5, 1.15)));
-  b.position.set(0, -0.78, BED_FRONT_Z + 0.55);
+  b.addShape(new CANNON.Box(new CANNON.Vec3(CONFIG.PLATE_W / 2 + 0.6, 0.5, 0.55)));
+  b.position.set(0, -0.55, CONFIG.PLATE_Z1 + 0.35);
   b.collisionResponse = false;
   b.isTrigger = true;
   b.addEventListener('collide', (ev) => {
@@ -1639,7 +1942,7 @@ function drainPendingResolve() {
   if (settling) { pendingResolve.length = 0; return; }
   for (let i = 0; i < pendingResolve.length; i++) {
     const e = pendingResolve[i];
-    if (e.alive && !e.scored) resolveEntity(e);
+    if (e.alive && !e.scored) resolveEntity(e, true);
   }
   pendingResolve.length = 0;
 }
@@ -1651,29 +1954,41 @@ function sweepResolve() {
     if (!e || !e.alive) continue;
     const p = e.body.position;
 
-    if (!e.scored && (p.y < SLOT_Y || Math.abs(p.x) > CONFIG.BED_W / 2 + 0.15)) {
-      resolveEntity(e);
-      continue;
+    if (!e.scored) {
+      /* 前方邊緣 → 正面收集槽（加分） */
+      const inFront = p.z > CONFIG.PLATE_Z1 + 0.02 && p.y < 0.15;
+      /* 左右兩側 → 回收暗洞（銷毀） */
+      const inSide = Math.abs(p.x) > CONFIG.PLATE_W / 2 + 0.02 && p.y < 0.6;
+
+      if (inFront || inSide) {
+        resolveEntity(e, inFront);
+        continue;
+      }
     }
-    if (e.alive && (p.y < -1.9 || Math.abs(p.x) > 6.5 || p.z > 11 || p.z < -5)) {
+    if (e.alive && (p.y < -3.2 || Math.abs(p.x) > 6.5 || p.z > 9.5 || p.z < -3)) {
       release(e);
     }
   }
 }
 
-/* 結算：幣 = 1 分、金幣 = 1 幣、波波 = 抽獎 */
-function resolveEntity(e) {
+/* 結算：正面收集槽 = 加分；兩側回收暗洞 = 銷毀不加分 */
+function resolveEntity(e, fromFront) {
   if (!e.alive || e.scored) return;
   e.scored = true;
 
   if (e.kind === 'ball') {
-    const px = e.body.position.x;
-    const inSlot = Math.abs(px) <= CONFIG.BED_W / 2 + 0.1;
     burstAt(e.body.position, 0xffd54a);
     release(e);
     sfx.ballIn();
-    if (inSlot) queueDraw();
+    if (fromFront) queueDraw();
     else scheduleBallRespawn();
+    return;
+  }
+
+  /* 兩側暗洞：銷毀，不給分 */
+  if (!fromFront) {
+    burstAt(e.body.position, 0xff4466);
+    sfx.click();
     return;
   }
 
@@ -1726,6 +2041,7 @@ const state = {
   smallJp: 0,
   bigJp: 0,
   coinsInserted: 0,
+  dropCd: 0,
   shakeLeft: CONFIG.SHAKE_USES_PER_GAME,
   shakeCd: 0,
   boostCd: 0,
@@ -2030,11 +2346,16 @@ function updateGoldSpill(dt) {
   if (goldPool.list.length >= CONFIG.GOLD_MAX) return;
 
   enforceBodyCap();
+  /* 獎勵幣一律從頂部落幣口掉下來，走一次完整的物理軌跡 */
   spawnCoin(
     'gold',
-    rand(-1.7, 1.7), 3.6,
-    rand(BED_FRONT_Z + 0.38, BED_FRONT_Z + 0.75),
-    rand(-0.2, 0.2), -0.4, rand(0, 0.3), rand(0, 6.28)
+    DROP.x + rand(-0.35, 0.35),
+    CONFIG.DROP_Y,
+    CONFIG.MAZE_Z,
+    rand(-0.8, 0.8),
+    0,
+    0,
+    0
   );
   goldRemaining--;
 }
@@ -2115,12 +2436,12 @@ function updateBallSystem(dt) {
   if (ballSpawnTimer <= 0 && ballPending > 0 && ballPool.list.length < CONFIG.BALL_MAX) {
     ballPending--;
     ballSpawnTimer = 1.4;
-    spawnBall(rand(-1.2, 1.2), 3.4, 3.0);
+    spawnBall(CONFIG.BALL_CHUTE_X, CONFIG.BALL_CHUTE_Y, CONFIG.MAZE_Z);
     updateHUD();
   }
 }
 
-/* --- 幣塔自動補幣：台面幣量過低時從塔頂漏幣，避免場面變空 --- */
+/* --- 機器自動補幣：推盤幣量過低時從上方投幣口補幣，避免場面變空 --- */
 let autoFeedTimer = 0;
 function updateAutoFeed(dt) {
   if (settling) return;
@@ -2129,9 +2450,8 @@ function updateAutoFeed(dt) {
   if (autoFeedTimer > 0) return;
   autoFeedTimer = CONFIG.AUTO_FEED_INTERVAL;
   enforceBodyCap();
-  const x = rand(-2.6, 2.6);
-  const z = rand(3.3, CONFIG.BED_D - 0.5);
-  spawnCoin('coin', x, bedY(z) + 1.6, z, 0, -0.6, 0, rand(0, 6.283));
+  spawnCoin('coin', rand(-2.6, 2.6), CONFIG.DROP_Y,
+    CONFIG.DROP_Z + rand(-0.3, 0.3), 0, -0.6, 0, rand(0, 6.283));
 }
 
 /* ============================================================
@@ -2184,12 +2504,14 @@ let holding = false;
 /* 單一投幣鍵：按一下 = 在滑軌當前位置落幣；長按 = 連投 */
 function bindInsert() {
   const btn = $('btnInsert');
+
   const end = () => {
     holding = false;
     clearTimeout(holdTimer);
   };
-  btn.addEventListener('pointerdown', (ev) => {
-    ev.preventDefault();
+
+  const start = (ev) => {
+    if (ev && ev.cancelable) ev.preventDefault();
     if (holding) return;
     holding = true;
     sfx.ensure();
@@ -2200,10 +2522,26 @@ function bindInsert() {
       holdTimer = setTimeout(loop, 160);
     };
     holdTimer = setTimeout(loop, 160);
-  });
+  };
+
+  /* Pointer Events 已涵蓋滑鼠 / 觸控 / 觸控筆 */
+  btn.addEventListener('pointerdown', start);
   btn.addEventListener('pointerup', end);
   btn.addEventListener('pointerleave', end);
   btn.addEventListener('pointercancel', end);
+
+  /* 舊版 iOS / WebView 沒有 PointerEvent 時的觸控後備（去重，避免連發） */
+  if (!window.PointerEvent) {
+    let lastTouch = 0;
+    btn.addEventListener('touchstart', (ev) => {
+      const now = performance.now();
+      if (now - lastTouch < 500) return;
+      lastTouch = now;
+      start(ev);
+    }, { passive: false });
+    btn.addEventListener('touchend', (ev) => { ev.preventDefault(); end(); }, { passive: false });
+    btn.addEventListener('touchcancel', end);
+  }
 }
 
 bindInsert();
@@ -2249,6 +2587,11 @@ $('btnSound').addEventListener('click', (e) => {
   e.currentTarget.textContent = sfx.on ? '🔊' : '🔇';
 });
 $('btnDebug').addEventListener('click', () => $('debug').classList.toggle('show'));
+$('btnRules').addEventListener('click', () => $('rulesPanel').classList.add('show'));
+$('btnRulesClose').addEventListener('click', () => $('rulesPanel').classList.remove('show'));
+$('rulesPanel').addEventListener('click', (e) => {
+  if (e.target === $('rulesPanel')) $('rulesPanel').classList.remove('show');
+});
 $('btnReset').addEventListener('click', () => {
   if (confirm('要重新開始嗎？（分數與錢包會重置）')) {
     localStorage.removeItem(SAVE_KEY);
@@ -2260,11 +2603,11 @@ $('btnReset').addEventListener('click', () => {
    §21  開局預載幣堆
    ============================================================ */
 function preloadCoins() {
-  const rows = 4, cols = 11;
+  const rows = 5, cols = 11;
   const x0 = -3.4, x1 = 3.4;
-  /* 前沿只離落幣口 0.25：推幣機真正的樣子是幣已經「掛在」邊緣上 */
-  const zFront = CONFIG.BED_D - 0.45;
-  const zBack = 2.70;
+  /* 推板前表面掃到 z = 3.2，所以幣堆放在它前面：3.0 ~ 5.75 */
+  const zFront = CONFIG.PLATE_Z1 - 0.28;
+  const zBack = 2.80;
   let full = false;
 
   for (let layer = 0; layer < 2 && !full; layer++) {
@@ -2311,7 +2654,9 @@ function tick() {
   physMs = lerp(physMs, performance.now() - p0, 0.1);
 
   /* --- 系統 --- */
-  updateCarriage(dt);
+  unstickBoard(dt);
+  lock2D();
+  clampSpeeds();
   drainPendingResolve();
   sweepResolve();
   updateBallSystem(dt);
@@ -2322,6 +2667,7 @@ function tick() {
 
   state.shakeCd = Math.max(0, state.shakeCd - dt);
   state.boostCd = Math.max(0, state.boostCd - dt);
+  state.dropCd = Math.max(0, state.dropCd - dt);
 
   /* --- 破產補幣 --- */
   if (state.wallet < 1) {
@@ -2341,16 +2687,19 @@ function tick() {
   goldPool.sync();
   ballPool.sync();
 
-  /* --- 相機 --- */
+  /* --- 相機（依 aspect 動態取距，斜俯視） --- */
   camOrbit = lerp(camOrbit, camOrbitTarget, 1 - Math.pow(0.001, dt));
   const cs = camShake > 0 ? camShake * 0.055 : 0;
   camShake = Math.max(0, camShake - dt * 6.5);
-  const ox = Math.sin(camOrbit) * 10.4;
-  const oz = Math.cos(camOrbit) * 10.4 - 10.4;
+
+  const cosP = Math.cos(CAM_PITCH);
+  const dirX = Math.sin(camOrbit) * cosP;
+  const dirY = Math.sin(CAM_PITCH);
+  const dirZ = Math.cos(camOrbit) * cosP;
   camera.position.set(
-    CAM_BASE.x + ox + rand(-cs, cs),
-    CAM_BASE.y + rand(-cs, cs),
-    CAM_BASE.z + oz
+    CAM_TARGET.x + dirX * camDist + rand(-cs, cs),
+    CAM_TARGET.y + dirY * camDist + rand(-cs, cs),
+    CAM_TARGET.z + dirZ * camDist
   );
   camera.lookAt(CAM_TARGET);
 
@@ -2369,11 +2718,10 @@ function tick() {
     }
     inst.instanceMatrix.needsUpdate = true;
   }
-  if (towerGlowSprite) {
-    const k = 1 + Math.sin(now * 0.0022) * 0.09;
-    towerGlowSprite.scale.set(5 * k, 5 * k, 1);
+  if (MAZE_PEGS.length) {
+    const k = 1.2 + Math.sin(now * 0.003) * 0.4;
+    MAZE_PEGS[0].mesh.material.emissiveIntensity = k;
   }
-  towerLightA.intensity = 20 + Math.sin(now * 0.003) * 5;
 
   /* --- UI --- */
   const shakeBtn = $('btnShake');
@@ -2387,9 +2735,7 @@ function tick() {
 
   const boostBtn = $('btnBoost');
   boostBtn.disabled = (state.boostCd > 0) || !CONFIG.BOOST_ENABLED;
-  boostBtn.textContent = state.boostCd > 0
-    ? '冷卻 ' + state.boostCd.toFixed(1) + 's'
-    : '推進器 ⚡';
+  boostBtn.textContent = state.boostCd > 0 ? Math.ceil(state.boostCd) : '⚡';
 
   /* --- 除錯 --- */
   if ($('debug').classList.contains('show')) {
@@ -2416,15 +2762,21 @@ function tick() {
    §23  啟動
    ============================================================ */
 addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
+  updateCameraFit();
   renderer.setPixelRatio(Math.min(devicePixelRatio, CONFIG.PIXEL_RATIO_CAP));
   renderer.setSize(innerWidth, innerHeight);
+});
+addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    updateCameraFit();
+    renderer.setSize(innerWidth, innerHeight);
+  }, 220);
 });
 
 function boot() {
   loadSave();
   updateHUD();
+  updateCameraFit();
 
   const bar = $('loaderBar');
   const overlay = $('loader');
@@ -2469,8 +2821,8 @@ boot();
 
 /* 除錯介面（Console 可用：__game.dropCoin()、__game.exchangeScore() 等） */
 window.__game = {
-  CONFIG, world, state, entities, camera, pusher, renderer, scene, CARRIAGE,
-  coinPool, goldPool, ballPool, drawQueue,
+  CONFIG, world, state, entities, camera, pusher, renderer, scene, MAT,
+  coinPool, goldPool, ballPool, drawQueue, DROP, MAZE_PEGS,
   dropCoin, exchangeScore, doShake, doBoost, spawnBall, queueDraw, spillGold,
   resolveEntity, enforceBodyCap, spawnCoin, release,
   stats() {
